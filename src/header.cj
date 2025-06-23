@@ -1,6 +1,6 @@
 package dnsmsg
 
-import net.http.*
+import std.io.*
 
 // OpCode is the operation code for a DNS message.
 enum OpCode {
@@ -10,6 +10,7 @@ enum OpCode {
     | Reserved(UInt8)
 }
 
+// Extend UInt8 to convert to OpCode.
 extend UInt8 {
     public func toOpCode() {
         match (this) {
@@ -32,15 +33,16 @@ enum RCode {
     | Reserved(UInt8)
 }
 
+// Extend UInt8 to convert to RCode.
 extend UInt8 {
     public func toRCode(): RCode {
         match (this) {
-            case 0x00 => RCode.NoError
-            case 0x01 => RCode.FormatError
-            case 0x02 => RCode.ServerFailure
-            case 0x03 => RCode.NameError
-            case 0x04 => RCode.NotImplemented
-            case 0x05 => RCode.Refused
+            case 0x00 => RCode.NoError // No error
+            case 0x01 => RCode.FormatError // Format error
+            case 0x02 => RCode.ServerFailure // SERVFAIL
+            case 0x03 => RCode.NameError // NXDOMAIN
+            case 0x04 => RCode.NotImplemented // Not implemented
+            case 0x05 => RCode.Refused // Refused
             case _ => RCode.Reserved(this)
         }
     }
@@ -51,12 +53,12 @@ struct Header {
     public Header(
         let id: UInt16,
         let response: Bool,
-        let opcode: OpCode,
+        let opCode: OpCode,
         let authoritative: Bool,
         let truncated: Bool,
         let recursionDesired: Bool,
         let recursionAvailable: Bool,
-        let rcode: RCode,
+        let rCode: RCode,
         let qdCount: UInt16,
         let anCount: UInt16,
         let nsCount: UInt16,
@@ -65,26 +67,38 @@ struct Header {
 }
 
 extend Header {
-    public static func fromBytes(data: Array<UInt8>): Header {
-        if (data.size < 12) {
-            throw Exception("Header data too short: ${data.size} bytes")
-        }
+    public static func fromStream<T>(stream: T): Header where T <: InputStream & Seekable  {
+        let id = readUInt16(stream).getOrThrow({ =>
+            Exception("Failed to read ID from stream")
+        })
+        let flags = readUInt16(stream).getOrThrow({ =>
+            Exception("Failed to read flags from stream")
+        })
+        // Parse the flags
+        // The flags are structured as follows:
+        // response (1 bit), opcode (4 bits), authoritative (1 bit), truncated (1 bit),
+        // recursion desired (1 bit), recursion available (1 bit),Z (3 bit), rcode (4 bits)
+        let response = (flags & 0x0001 << 15) != 0
+        let opcode = (UInt8(flags >> 11) & 0x0F).toOpCode()
+        let authoritative = (flags & 0x0001 << 10) != 0
+        let truncated = (flags & 0x0001 << 9) != 0
+        let recursionDesired = (flags & 0x0001 << 8) != 0
+        let recursionAvailable = (flags & 0x0001 << 7) != 0
+        let rcode = (UInt8(flags & 0x0F)).toRCode()
 
-        let id: UInt16 = (UInt16(data[0]) << 8) | UInt16(data[1])
-        let flags1 = data[2]
-        let flags2 = data[3]
-        let response = (flags1 & 0x01 << 7) != 0
-        let opcode = (flags1 >> 3 & 0x0F).toOpCode()
-        let authoritative = (flags1 & 0x01 << 2) != 0
-        let truncated = (flags1 & 0x01 << 1) != 0
-        let recursionDesired = (flags1 & 0x01) != 0
-        let recursionAvailable = (flags2 & 0x01 << 7) != 0
-        let rcode = (flags2 & 0x0F).toRCode()
-
-        let qdCount: UInt16 = (UInt16(data[4]) << 8) | UInt16(data[5])
-        let anCount: UInt16 = (UInt16(data[6]) << 8) | UInt16(data[7])
-        let nsCount: UInt16 = (UInt16(data[8]) << 8) | UInt16(data[9])
-        let arCount: UInt16 = (UInt16(data[10]) << 8) | UInt16(data[11])
+        
+        let qdCount = readUInt16(stream).getOrThrow({ =>
+            Exception("Failed to read question count from stream")
+        })
+        let anCount = readUInt16(stream).getOrThrow({ =>
+            Exception("Failed to read answer count from stream")
+        })
+        let nsCount = readUInt16(stream).getOrThrow({ =>
+            Exception("Failed to read authority count from stream")
+        })
+        let arCount = readUInt16(stream).getOrThrow({ =>
+            Exception("Failed to read additional count from stream")
+        })
 
         return Header(
             id,
@@ -92,7 +106,7 @@ extend Header {
             opcode,
             authoritative,
             truncated,
-            recursionDesired,  
+            recursionDesired,
             recursionAvailable,
             rcode,
             qdCount,
@@ -102,50 +116,11 @@ extend Header {
         )
     }
 
-    public static func tryFromBytes(data: Array<UInt8>): Option<Header> {
+    public static func tryFromStream<T>(data: T): Option<Header> where T <: InputStream & Seekable {
         try {
-            Header.fromBytes(data)
+            Header.fromStream(data)
         } catch (_) {
             None
         }
     }
-
-    public func pack(): Array<UInt8> {
-        // let flags1: UInt8 = 
-        //     (if (response) 0x80 else 0x00) |
-        //     (opcode.toUInt8() << 3) |
-        //     (if (authoritative) 0x04 else 0x00) |
-        //     (if (truncated) 0x02 else 0x00) |
-        //     (if (recursionDesired) 0x01 else 0x00)
-
-        // let flags2: UInt8 = 
-        //     (if (recursionAvailable) 0x80 else 0x00) |
-        //     rcode.toUInt8()
-
-        // return [
-        //     UInt8(id >> 8),
-        //     UInt8(id & 0xFF),
-        //     flags1,
-        //     flags2,
-        //     UInt8(qdCount >> 8),
-        //     UInt8(qdCount & 0xFF),
-        //     UInt8(anCount >> 8),
-        //     UInt8(anCount & 0xFF),
-        //     UInt8(nsCount >> 8),
-        //     UInt8(nsCount & 0xFF),
-        //     UInt8(arCount >> 8),
-        //     UInt8(arCount & 0xFF)
-        // ]
-        throw Exception("Not implemented yet")
-    }
-}
-
-func test() {
-    // 1. 构建 client 实例
-    let client = ClientBuilder().build()
-    // 2. 发送 request
-    let rsp = client.get("http://example.com/hello")
-    // 3. 读取response
-    // 4. 关闭连接
-    client.close()
 }

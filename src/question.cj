@@ -1,6 +1,7 @@
 package dnsmsg
 
 import std.collection.*
+import std.io.*
 
 // Question for a DNS query.
 struct Question {
@@ -12,25 +13,20 @@ struct Question {
 }
 
 extend Question {
-    public static func fromBytes(data: Array<UInt8>): Question {
-        if (data.size <= 4) {
-            throw Exception("Question data too short: ${data.size} bytes")
-        }
+    public static func fromStream<T>(stream: T): Question where T <: InputStream & Seekable {
+        // Read the name
+        let name = Name.fromStream(stream)
 
-        var name = Name.fromBytes(data)
-        let index = name.length + 2 
-        if (index + 4 > data.size) {
-            throw Exception("Question data too short after QName: ${data.size} bytes")
-        }
-        let qType: Type = (UInt16(data[index]) << 8) | UInt16(data[index + 1])
-        let qClass: Class = (UInt16(data[index + 2]) << 8) | UInt16(data[index + 3])
+        // Read the type and class
+        let qType = readUInt16(stream).getOrThrow({=> Exception("Failed to read question type from stream")})
+        let qClass = readUInt16(stream).getOrThrow({=> Exception("Failed to read question class from stream")})
 
         return Question(name, qType, qClass)
     }
 
-    public static func tryFromBytes(data: Array<UInt8>): Option<Question> {
+    public static func tryFromStream<T>(stream: T): Option<Question> where T <: InputStream & Seekable {
         try {
-            fromBytes(data)
+            Question.fromStream(stream)
         } catch (_) {
             None
         }

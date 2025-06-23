@@ -2,6 +2,7 @@ package dnsmsg
 
 import std.unittest.*
 import std.unittest.testmacro.*
+import std.io.*
 
 @Test
 class HeaderTest {
@@ -22,7 +23,10 @@ class HeaderTest {
             case _ => false
         })
 
-        @ExpectThrows(3u8.toOpCode())
+        @Expect(match (3u8.toOpCode()) {
+            case OpCode.Reserved(3u8) => true
+            case _ => false
+        })
     }
 
     @TestCase
@@ -57,11 +61,14 @@ class HeaderTest {
             case _ => false
         })
 
-        @ExpectThrows(6u8.toRCode())
+        @Expect(match (6u8.toRCode()) {
+            case RCode.Reserved(6u8) => true
+            case _ => false
+        })
     }
 
     @TestCase
-    func testHeaderFromBytes() {
+    func testHeaderFromStream() {
         let data: Array<UInt8> = [
             0xdb, 0x42, // ID
             0x01, 0x00, // Flags: response, opcode=Query, authoritative, truncated, recursion desired, recursion available, rcode=NoError
@@ -70,11 +77,13 @@ class HeaderTest {
             0x00, 0x00, // NSCount
             0x00, 0x00  // ARCount
         ]
+        let stream = ByteArrayStream()
+        stream.write(data)
 
-        let header = Header.fromBytes(data);
+        let header = Header.fromStream(stream)
         @Expect(header.id == 0xdb42)
         @Expect(header.response == false)
-        @Expect(match (header.opcode) {
+        @Expect(match (header.opCode) {
             case OpCode.Query => true
             case _ => false
         })
@@ -82,7 +91,7 @@ class HeaderTest {
         @Expect(header.truncated == false)
         @Expect(header.recursionDesired == true)
         @Expect(header.recursionAvailable == false)
-        @Expect(match (header.rcode) {
+        @Expect(match (header.rCode) {
             case RCode.NoError => true
             case _ => false
         })
@@ -93,18 +102,20 @@ class HeaderTest {
     }
 
     @TestCase
-    func testHeaderFromBytesInvalid() {
+    func testHeaderFromStreamInvalid() {
         let data: Array<UInt8> = [
             0xdb, 0x42, // ID
             0x01, 0x00  // Flags: response, opcode=Query, authoritative, truncated, recursion desired, recursion available, rcode=NoError
             // Missing QDCount, ANCount, NSCount, ARCount
         ]
+        let stream = ByteArrayStream()
+        stream.write(data)
 
-        @ExpectThrows(Header.fromBytes(data))
+        @ExpectThrows(Header.fromStream(stream))
     }
 
     @TestCase
-    func testHeaderTryFromBytes() {
+    func testHeaderTryFromStream() {
         let data: Array<UInt8> = [
             0xdb, 0x42, // ID
             0x01, 0x00, // Flags: response, opcode=Query, authoritative, truncated, recursion desired, recursion available, rcode=NoError
@@ -113,21 +124,25 @@ class HeaderTest {
             0x00, 0x00, // NSCount
             0x00, 0x00  // ARCount
         ]
+        let stream = ByteArrayStream()
+        stream.write(data)
 
-        let header = Header.tryFromBytes(data);
+        let header = Header.tryFromStream(stream)
         @Expect(header.isSome())
         @Expect(header?.id == 0xdb42)
     }
 
     @TestCase
-    func testHeaderTryFromBytesInvalid() {
+    func testHeaderTryFromStreamInvalid() {
         let data: Array<UInt8> = [
             0xdb, 0x42, // ID
             0x01, 0x00  // Flags: response, opcode=Query, authoritative, truncated, recursion desired, recursion available, rcode=NoError
             // Missing QDCount, ANCount, NSCount, ARCount
         ]
+        let stream = ByteArrayStream()
+        stream.write(data)
 
-        let header = Header.tryFromBytes(data);
+        let header = Header.tryFromStream(stream)
         @Expect(header.isNone())
     }
 }
