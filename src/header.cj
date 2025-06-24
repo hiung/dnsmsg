@@ -8,17 +8,30 @@ public enum OpCode {
     | IQuery
     | Status
     | Reserved(UInt8)
+
+    public static func fromUInt8(value: UInt8): OpCode {
+        match (value) {
+            case 0x00 => OpCode.Query
+            case 0x01 => OpCode.IQuery
+            case 0x02 => OpCode.Status
+            case _ => OpCode.Reserved(value)
+        }
+    }
+
+    public func toUInt8(): UInt8 {
+        match (this) {
+            case OpCode.Query => 0x00
+            case OpCode.IQuery => 0x01
+            case OpCode.Status => 0x02
+            case OpCode.Reserved(value) => value
+        }
+    }
 }
 
 // Extend UInt8 to convert to OpCode.
 extend UInt8 {
     public func toOpCode() {
-        match (this) {
-            case 0x00 => OpCode.Query
-            case 0x01 => OpCode.IQuery
-            case 0x02 => OpCode.Status
-            case _ => OpCode.Reserved(this)
-        }
+        OpCode.fromUInt8(this)
     }
 }
 
@@ -31,20 +44,36 @@ public enum RCode {
     | NotImplemented
     | Refused
     | Reserved(UInt8)
-}
 
-// Extend UInt8 to convert to RCode.
-extend UInt8 {
-    public func toRCode(): RCode {
-        match (this) {
+    public static func fromUInt8(value: UInt8): RCode {
+        match (value) {
             case 0x00 => RCode.NoError // No error
             case 0x01 => RCode.FormatError // Format error
             case 0x02 => RCode.ServerFailure // SERVFAIL
             case 0x03 => RCode.NameError // NXDOMAIN
             case 0x04 => RCode.NotImplemented // Not implemented
             case 0x05 => RCode.Refused // Refused
-            case _ => RCode.Reserved(this)
+            case _ => RCode.Reserved(value)
         }
+    }
+
+    public func toUInt8(): UInt8 {
+        match (this) {
+            case RCode.NoError => 0x00 // No error
+            case RCode.FormatError => 0x01 // Format error
+            case RCode.ServerFailure => 0x02 // SERVFAIL
+            case RCode.NameError => 0x03 // NXDOMAIN
+            case RCode.NotImplemented => 0x04 // Not implemented
+            case RCode.Refused => 0x05 // Refused
+            case RCode.Reserved(value) => value
+        }
+    }
+}
+
+// Extend UInt8 to convert to RCode.
+extend UInt8 {
+    public func toRCode(): RCode {
+        RCode.fromUInt8(this)
     }
 }
 

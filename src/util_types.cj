@@ -127,6 +127,19 @@ extend Name {
     public func toString(): String {
         return String.join(labels, delimiter: ".")
     }
+
+    public func toBytes(): Array<UInt8> {
+        labels |> 
+        map { label =>
+            let labelBytes = Array<UInt8>(label.size + 1, item: 0)
+            labelBytes[0] = UInt8(label.size)
+            labelBytes[1..=label.size] = label.toArray()
+            labelBytes
+        } |> 
+        flatten |> 
+        concat(Array<UInt8>(1, item: 0)) |> 
+        collectArray
+    }
 }
 
 // Type is the type of a DNS query.

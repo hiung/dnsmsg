@@ -142,4 +142,13 @@ class UtilTypesTest {
         @Expect(name.length == 15) // "cangjie-lang.cn" has 15 characters
         @Expect(name.toString() == "cangjie-lang.cn")
     }
+
+    @TestCase
+    func testNameToBytes() {
+        let name = Name.fromString("cangjie-lang.cn")
+        let bytes = name.toBytes()
+
+        @Expect(bytes == [12, b'c', b'a', b'n', b'g', b'j', b'i', b'e', b'-', b'l', b'a', b'n', b'g',
+                          2, b'c', b'n', 0]) // Corresponding byte representation
+    }
 }

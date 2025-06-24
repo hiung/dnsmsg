@@ -13,7 +13,9 @@ public struct Resource {
         public let rdLength: UInt16,
         public let record: Record // The decent rdata
     ) {}
+}
 
+extend Resource {
     public static func fromStream<T>(stream: T): Resource where T <: InputStream & Seekable {
         // Read the name
         let name = Name.fromStream(stream)
