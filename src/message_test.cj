@@ -101,7 +101,6 @@ class MessageTest {
 
             let message = Message.fromStream(responseStream)
 
-
             @Expect(message.header.id == 0x00d0) // ID from header
             @Expect(message.header.response == true) // Response flag
             @Expect(match (message.header.opCode) {

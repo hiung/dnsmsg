@@ -50,10 +50,10 @@ func readBytes<T>(stream: T, length: Int64): Option<Array<UInt8>> where T <: Inp
 }
 
 // Name represents a domain name, which is a sequence of labels separated by dots.
-struct Name {
+public struct Name {
     public Name(
-        let labels: Array<String>,
-        let length: Int64
+        public let labels: Array<String>,
+        public let length: Int64
     ) {}
 }
 

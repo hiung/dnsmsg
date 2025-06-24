@@ -4,11 +4,11 @@ import std.collection.*
 import std.io.*
 
 // Question for a DNS query.
-struct Question {
+public struct Question {
     public Question(
-        let name: Name,
-        let qType: Type,
-        let qClass: Class
+        public let name: Name,
+        public let qType: Type,
+        public let qClass: Class
     ) {}
 }
 

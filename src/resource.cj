@@ -4,14 +4,14 @@ import std.format.*
 import std.io.*
 
 // Resource for DNS answers, authorities, and additionals.
-struct Resource {
+public struct Resource {
     public Resource(
-        let name: Name,
-        let rType: Type,
-        let rClass: Class,
-        let ttl: UInt32,
-        let rdLength: UInt16,
-        let record: Record // The decent rdata
+        public let name: Name,
+        public let rType: Type,
+        public let rClass: Class,
+        public let ttl: UInt32,
+        public let rdLength: UInt16,
+        public let record: Record // The decent rdata
     ) {}
 
     public static func fromStream<T>(stream: T): Resource where T <: InputStream & Seekable {
@@ -125,7 +125,7 @@ struct Resource {
     }
 }
 
-enum Record {
+public enum Record {
     A(IPv4)
     | NS(Name)
     | CNAME(Name)
@@ -162,7 +162,7 @@ enum Record {
 }
 
 // 
-struct IPv4 {
+public struct IPv4 {
     public IPv4(
         let a: UInt8,
         let b: UInt8,
@@ -175,7 +175,7 @@ struct IPv4 {
     }
 }
 
-struct IPv6 {
+public struct IPv6 {
     public IPv6(
         let a: UInt16,
         let b: UInt16,
@@ -192,7 +192,7 @@ struct IPv6 {
     }
 }
 
-struct SOAValue {
+public struct SOAValue {
     public SOAValue(
         let mname: Name,
         let rname: Name,

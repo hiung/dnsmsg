@@ -3,7 +3,7 @@ package dnsmsg
 import std.io.*
 
 // OpCode is the operation code for a DNS message.
-enum OpCode {
+public enum OpCode {
     Query
     | IQuery
     | Status
@@ -23,7 +23,7 @@ extend UInt8 {
 }
 
 // RCode is the response status code for a DNS message.
-enum RCode {
+public enum RCode {
     NoError
     | FormatError
     | ServerFailure
@@ -49,20 +49,20 @@ extend UInt8 {
 }
 
 // Header for a DNS message header.
-struct Header {
+public struct Header {
     public Header(
-        let id: UInt16,
-        let response: Bool,
-        let opCode: OpCode,
-        let authoritative: Bool,
-        let truncated: Bool,
-        let recursionDesired: Bool,
-        let recursionAvailable: Bool,
-        let rCode: RCode,
-        let qdCount: UInt16,
-        let anCount: UInt16,
-        let nsCount: UInt16,
-        let arCount: UInt16
+        public let id: UInt16,
+        public let response: Bool,
+        public let opCode: OpCode,
+        public let authoritative: Bool,
+        public let truncated: Bool,
+        public let recursionDesired: Bool,
+        public let recursionAvailable: Bool,
+        public let rCode: RCode,
+        public let qdCount: UInt16,
+        public let anCount: UInt16,
+        public let nsCount: UInt16,
+        public let arCount: UInt16
     ) {}
 }
 

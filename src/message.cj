@@ -4,13 +4,13 @@ import std.io.*
 import std.collection.*
 
 // Message represents a DNS message, which includes a header, questions, answers, authorities, and additionals.
-struct Message {
+public struct Message {
     public Message(
-        let header: Header,
-        let questions: Array<Question>,
-        let answers: Array<Resource>,
-        let authorities: Array<Resource>,
-        let additionals: Array<Resource>
+        public let header: Header,
+        public let questions: Array<Question>,
+        public let answers: Array<Resource>,
+        public let authorities: Array<Resource>,
+        public let additionals: Array<Resource>
     ) {}
 }
 
