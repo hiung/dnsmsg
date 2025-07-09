@@ -31,4 +31,8 @@ extend Question {
             None
         }
     }
+
+    public func toArray(): Array<UInt8> {
+        name.toArray() + [UInt8(qType >> 8), UInt8(qType & 0xFF), UInt8(qClass >> 8), UInt8(qClass & 0xFF)]
+    }
 }

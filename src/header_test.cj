@@ -145,4 +145,33 @@ class HeaderTest {
         let header = Header.tryFromStream(stream)
         @Expect(header.isNone())
     }
+
+    @TestCase
+    func testHeaderToArray() {
+        let header = Header(
+            0xdb42,
+            false,
+            OpCode.Query,
+            false,
+            false,
+            true,
+            false,
+            RCode.NoError,
+            1,
+            0,
+            0,
+            0
+        )
+
+        let expectedData: Array<UInt8> = [
+            0xdb, 0x42, // ID
+            0x01, 0x00, // Flags
+            0x00, 0x01, // QDCount
+            0x00, 0x00, // ANCount
+            0x00, 0x00, // NSCount
+            0x00, 0x00  // ARCount
+        ]
+
+        @Expect(header.toArray(), expectedData)
+    }
 }

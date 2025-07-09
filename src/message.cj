@@ -55,4 +55,19 @@ extend Message {
             None
         }
     }
+
+    public func toArray(): Array<UInt8> {
+        let headerBytes = header.toArray()
+        let questionsBytes = questions |> map { question => question.toArray() } |> flatten 
+        let answersBytes = answers |> map { answer => answer.toArray() } |> flatten
+        let authoritiesBytes = authorities |> map { authority => authority.toArray() } |> flatten
+        let additionalsBytes = additionals |> map { additional => additional.toArray() } |> flatten
+
+        return headerBytes |> concat(questionsBytes) |> concat(answersBytes) |> concat(authoritiesBytes) |> concat(additionalsBytes) |> collectArray
+    }
+
+    public func toCompressedArray(): Array<UInt8> {
+        // This method is a placeholder for future compression logic
+        return this.toArray()
+    }
 }

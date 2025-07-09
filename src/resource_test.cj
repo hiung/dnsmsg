@@ -62,5 +62,40 @@ class ResourceTest {
             case _ => false
         })
     }
+
+    @TestCase
+    func testResourceToArray() {
+        let resource = Resource(
+            Name.fromString("cangjie-lang.cn"),
+            TypeA,
+            ClassIN,
+            60,
+            4,
+            Record.A(IPv4(192, 168, 1, 1))
+        )
+
+        let data: Array<UInt8> = [
+            12, b'c', b'a', b'n', b'g', b'j', b'i', b'e', b'-', b'l', b'a', b'n', b'g', // "cangjie-lang"
+            2, b'c', b'n', // "cn"
+            0, // End of name
+            0, 1, // Type A
+            0, 1, // Class IN
+            0, 0, 0, 60, // TTL 60 seconds
+            0, 4, // RDATA length
+            192, 168, 1, 1 // rdata for A record
+        ]
+
+        @Expect(resource.toArray(), data)
+    }
+
+    @TestCase
+    func testRecordToArray() {
+        let record = Record.A(IPv4(192, 168, 1, 1))
+        let data: Array<UInt8> = [
+            192, 168, 1, 1 // rdata for A record
+        ]
+
+        @Expect(record.toArray(), data)
+    }
 }
 

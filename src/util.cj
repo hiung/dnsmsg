@@ -105,8 +105,7 @@ extend Name {
             labels.append(label)
         }
 
-        let nameLength = (labels |> map {label => label.size} |> reduce {acc, len => acc + len + 1}) ??
-            0
+        let nameLength = (labels |> map {label => label.size} |> reduce {acc, len => acc + len + 1}) ?? 0
 
         return Name(labels.toArray(), Int64(nameLength))
     }
@@ -128,17 +127,15 @@ extend Name {
         return String.join(labels, delimiter: ".")
     }
 
-    public func toBytes(): Array<UInt8> {
-        labels |> 
-        map { label =>
+    public func toArray(): Array<UInt8> {
+        labels |>
+            map {
+            label =>
             let labelBytes = Array<UInt8>(label.size + 1, item: 0)
             labelBytes[0] = UInt8(label.size)
             labelBytes[1..=label.size] = label.toArray()
             labelBytes
-        } |> 
-        flatten |> 
-        concat(Array<UInt8>(1, item: 0)) |> 
-        collectArray
+        } |> flatten |> concat(Array<UInt8>(1, item: 0)) |> collectArray
     }
 }
 
@@ -175,3 +172,10 @@ const ClassHS: Class = 4 // Hesiod
 // Question classes
 const ClassNONE: Class = 254 // None
 const ClassANY: Class = 255 // Any
+
+// Extend Array<T> to support concatenation
+extend<T> Array<T> {
+    operator func +(right: Array<T>): Array<T> {
+        this.concat(right)
+    }
+}

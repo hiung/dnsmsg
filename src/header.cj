@@ -152,4 +152,25 @@ extend Header {
             None
         }
     }
+
+    public func toArray(): Array<UInt8> {
+        let flags = (
+            (if (response) {0x0001} else {0}) << 15 |
+            (UInt16(opCode.toUInt8()) & 0x0F) << 11 |
+            (if (authoritative) {0x0001} else {0}) << 10 |
+            (if (truncated) {0x0001} else {0}) << 9 |
+            (if (recursionDesired) {0x0001} else {0}) << 8 |
+            (if (recursionAvailable) {0x0001} else {0}) << 7 |
+            UInt16(rCode.toUInt8()) & 0x0F
+        )
+
+        return [
+            UInt8(id >> 8), UInt8(id & 0xFF),
+            UInt8(flags >> 8), UInt8(flags & 0xFF),
+            UInt8(qdCount >> 8), UInt8(qdCount & 0xFF),
+            UInt8(anCount >> 8), UInt8(anCount & 0xFF),
+            UInt8(nsCount >> 8), UInt8(nsCount & 0xFF),
+            UInt8(arCount >> 8), UInt8(arCount & 0xFF)
+        ]
+    }
 }

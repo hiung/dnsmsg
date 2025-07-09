@@ -5,7 +5,7 @@ import std.unittest.testmacro.*
 import std.io.*
 
 @Test
-class UtilTypesTest {
+class UtilTest {
     @TestCase
     func testReadUInt8() {
         let data: Array<UInt8> = [0x01, 0x02, 0x03]
@@ -144,9 +144,9 @@ class UtilTypesTest {
     }
 
     @TestCase
-    func testNameToBytes() {
+    func testNameToArray() {
         let name = Name.fromString("cangjie-lang.cn")
-        let bytes = name.toBytes()
+        let bytes = name.toArray()
 
         @Expect(bytes == [12, b'c', b'a', b'n', b'g', b'j', b'i', b'e', b'-', b'l', b'a', b'n', b'g',
                           2, b'c', b'n', 0]) // Corresponding byte representation

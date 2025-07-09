@@ -47,7 +47,7 @@ extend Resource {
         // Save the current position to check the length later
         let prePos = stream.position
 
-        let record = if (rType ==TypeA) {
+        let record = if (rType == TypeA) {
             let bytes = readBytes(stream, 4).getOrThrow({=> Exception("Failed to read A record data from stream")})
             Record.A(IPv4(bytes[0], bytes[1], bytes[2], bytes[3]))
         } else if (rType == TypeNS) {
@@ -84,16 +84,14 @@ extend Resource {
             let errorsMailbox = Name.fromStream(stream)
             Record.MINFO(mailbox, errorsMailbox)
         } else if (rType == TypeMX) {
-            let preference = readUInt16(stream).getOrThrow(
-                {=> Exception("Failed to read MX preference from stream")})
+            let preference = readUInt16(stream).getOrThrow({=> Exception("Failed to read MX preference from stream")})
             let name = Name.fromStream(stream)
             Record.MX(preference, name)
         } else if (rType == TypeTXT) {
             let text = Name.fromStream(stream).toString() // Assuming Name can be converted to String
             Record.TXT(text)
         } else if (rType == TypeAAAA) {
-            let bytes = readBytes(stream, 16).getOrThrow(
-                {=> Exception("Failed to read AAAA record data from stream")})
+            let bytes = readBytes(stream, 16).getOrThrow({=> Exception("Failed to read AAAA record data from stream")})
             Record.AAAA(
                 IPv6(
                     (UInt16(bytes[0]) << 8) | UInt16(bytes[1]),
@@ -112,9 +110,13 @@ extend Resource {
             let port = readUInt16(stream).getOrThrow({=> Exception("Failed to read SRV port from stream")})
             let target = Name.fromStream(stream)
             Record.SRV(priority, weight, port, target)
+        } else if (rType == TypeOPT) {
+            let extendedRCode = readUInt16(stream).getOrThrow({=> Exception("Failed to read OPT extended RCODE from stream")})
+            let optionsLength = rdLength - 2 // 2 bytes for extended RCODE
+            let options = readBytes(stream, Int64(optionsLength)).getOrThrow({=> Exception("Failed to read OPT options from stream")})
+            Record.OPT(extendedRCode, options)
         } else {
-            let data = readBytes(stream, Int64(rdLength)).getOrThrow(
-                {=> Exception("Failed to read RDATA from stream")})
+            let data = readBytes(stream, Int64(rdLength)).getOrThrow({=> Exception("Failed to read RDATA from stream")})
             Record.Unknown(rType, data)
         }
 
@@ -124,6 +126,17 @@ extend Resource {
         }
 
         return record
+    }
+
+    public func toArray(): Array<UInt8> {
+        let nameBytes = name.toArray()
+        let typeBytes = [UInt8(rType >> 8), UInt8(rType & 0xFF)]
+        let classBytes = [UInt8(rClass >> 8), UInt8(rClass & 0xFF)]
+        let ttlBytes = [UInt8(ttl >> 24), UInt8((ttl >> 16) & 0xFF), UInt8((ttl >> 8) & 0xFF), UInt8(ttl & 0xFF)]
+        let rdLengthBytes = [UInt8(rdLength >> 8), UInt8(rdLength & 0xFF)]
+        let recordBytes = record.toArray()
+
+        return nameBytes + typeBytes + classBytes + ttlBytes + rdLengthBytes + recordBytes
     }
 }
 
@@ -159,6 +172,37 @@ public enum Record {
             case SRV(priority, weight, port, target) => "SRV: Priority=${priority}, Weight=${weight}, Port=${port}, Target=${target.toString()}"
             case OPT(code, options) => "OPT: Code=${code}, Options=${options}"
             case Unknown(_type, data) => "Unknown Record Type(${_type}): Data=${data}"
+        }
+    }
+
+    public func toArray(): Array<UInt8> {
+        match (this) {
+            case A(ipv4) => [UInt8(ipv4.a), UInt8(ipv4.b), UInt8(ipv4.c), UInt8(ipv4.d)]
+            case NS(name) => name.toArray()
+            case CNAME(name) => name.toArray()
+            case SOA(soaVal) => soaVal.mname.toArray() + soaVal.rname.toArray() + [UInt8(soaVal.serial >> 24),
+                UInt8((soaVal.serial >> 16) & 0xFF), UInt8((soaVal.serial >> 8) & 0xFF), UInt8(soaVal.serial & 0xFF),
+                UInt8(soaVal.refresh >> 24), UInt8((soaVal.refresh >> 16) & 0xFF), UInt8((soaVal.refresh >> 8) & 0xFF),
+                UInt8(soaVal.refresh & 0xFF), UInt8(soaVal.retry >> 24), UInt8((soaVal.retry >> 16) & 0xFF),
+                UInt8((soaVal.retry >> 8) & 0xFF), UInt8(soaVal.retry & 0xFF), UInt8(soaVal.expire >> 24),
+                UInt8((soaVal.expire >> 16) & 0xFF), UInt8((soaVal.expire >> 8) & 0xFF), UInt8(soaVal.expire & 0xFF),
+                UInt8(soaVal.minimum >> 24), UInt8((soaVal.minimum >> 16) & 0xFF), UInt8((soaVal.minimum >> 8) & 0xFF),
+                UInt8(soaVal.minimum & 0xFF)]
+            case WKS(ipv4, protocol, bitmap) => [UInt8(ipv4.a), UInt8(ipv4.b), UInt8(ipv4.c), UInt8(ipv4.d), protocol] +
+                bitmap
+            case PTR(name) => name.toArray()
+            case HINFO(cpu, os) => Name.fromString(cpu).toArray() + Name.fromString(os).toArray()
+            case MINFO(mailbox, errorsMailbox) => mailbox.toArray() + errorsMailbox.toArray()
+            case MX(preference, name) => [UInt8(preference >> 8), UInt8(preference & 0xFF)] + name.toArray()
+            case TXT(text) => text.toArray()
+            case AAAA(ipv6) => [UInt8(ipv6.a >> 8), UInt8(ipv6.a & 0xFF), UInt8(ipv6.b >> 8), UInt8(ipv6.b & 0xFF),
+                UInt8(ipv6.c >> 8), UInt8(ipv6.c & 0xFF), UInt8(ipv6.d >> 8), UInt8(ipv6.d & 0xFF),
+                UInt8(ipv6.e >> 8), UInt8(ipv6.e & 0xFF), UInt8(ipv6.f >> 8), UInt8(ipv6.f & 0xFF),
+                UInt8(ipv6.g >> 8), UInt8(ipv6.g & 0xFF), UInt8(ipv6.h >> 8), UInt8(ipv6.h & 0xFF)]
+            case SRV(priority, weight, port, target) => [UInt8(priority >> 8), UInt8(priority & 0xFF),
+                UInt8(weight >> 8), UInt8(weight & 0xFF), UInt8(port >> 8), UInt8(port & 0xFF)] + target.toArray()
+            case OPT(code, options) => [UInt8(code >> 8), UInt8(code & 0xFF)] + options
+            case Unknown(_, data) => data
         }
     }
 }

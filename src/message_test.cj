@@ -64,6 +64,8 @@ class MessageTest {
             case Record.A(addr) => addr.toString() == "192.168.1.1"
             case _ => false
         })
+
+        @Expect(message.toArray() == data) 
     }
 
     @TestCase
@@ -91,7 +93,7 @@ class MessageTest {
             udpSocket.sendTimeout = Duration.second * 2
             udpSocket.receiveTimeout = Duration.second * 2
             udpSocket.bind()
-            udpSocket.sendTo(SocketAddress("114.114.114.114", 53), payload)
+            udpSocket.sendTo(SocketAddress("192.168.0.2", 53), payload)
             let (servAddr, bytesRead) = udpSocket.receiveFrom(buffer)
             
             @Expect(bytesRead > 0)
