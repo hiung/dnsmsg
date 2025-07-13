@@ -45,7 +45,7 @@ class ResourceTest {
         let buffer = ByteBuffer()
         buffer.write(data)
 
-        Record.A(IPv4Address(192, 168, 1, 1))
+        RData.A(IPv4Address(192, 168, 1, 1))
 
         let resource = ResourceRecord.fromBytes(buffer)
         @Expect(resource.name.toString() == "cangjie-lang.cn")
@@ -54,7 +54,7 @@ class ResourceTest {
         @Expect(resource.ttl == 60)
         @Expect(resource.rdLength == 4)
         @Expect(match (resource.rData) {
-            case Record.A(addr) => addr.toString() == "192.168.1.1"
+            case RData.A(addr) => addr.toString() == "192.168.1.1"
             case _ => false
         })
     }
@@ -105,7 +105,7 @@ class ResourceTest {
         @Expect(resource.ttl == 60)
         @Expect(resource.rdLength == 5)
         @Expect(match (resource.rData) {
-            case Record.NS(name) => name.toString() == "ns.cangjie-lang.cn"
+            case RData.NS(name) => name.toString() == "ns.cangjie-lang.cn"
             case _ => false
         })
     }

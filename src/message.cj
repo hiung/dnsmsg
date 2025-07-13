@@ -15,6 +15,7 @@ public struct Message {
 }
 
 extend Message {
+    // fromBytes reads a DNS message from a byte stream and constructs a Message object.
     public static func fromBytes<T>(buffer: T): Message where T <: InputStream & Seekable {
         // Read the header
         let header = Header.fromBytes(buffer)
@@ -85,11 +86,12 @@ extend Message {
     }
 }
 
+// MessageBuffer is a utility class for constructing DNS messages in a byte buffer.
 class MessageBuffer {
     private let buffer: ByteBuffer
     private let nameMap: HashMap<Name, Int64>
 
-    public MessageBuffer() {
+    MessageBuffer() {
         this.buffer = ByteBuffer()
         this.nameMap = HashMap<Name, Int64>()
     }
@@ -103,21 +105,35 @@ class MessageBuffer {
         buffer.writeUInt16(header.arCount)
     }
 
+    func writeQuestion(question: Question): Unit {
+        writeName(question.name)
+        buffer.writeUInt16(question.qType)
+        buffer.writeUInt16(question.qClass)
+    }
+
+    func writeResourceRecord(record: ResourceRecord): Unit {
+        writeName(record.name)
+        buffer.writeUInt16(record.rType)
+        buffer.writeUInt16(record.rClass)
+        buffer.writeUInt32(record.ttl)
+        buffer.writeUInt16(record.rdLength)
+        writeRDate(record.rData)
+    }
+
     private func writeName(name: Name): Unit { 
         if (nameMap.contains(name)) {
-            // If the name is already in the map, write a pointer
+            // If the name is already in the nameMap, write a pointer
             let pointer = nameMap[name]
             writePointer(pointer)
             return
         }
-
+        // If the name is not in the nameMap, add it and pointer to nameMap
         nameMap.add(name, buffer.length)
-
+        // Write the first label
         let currentLabel = name.labels[0]
-
         buffer.writeByte(UInt8(currentLabel.size))
         buffer.write(currentLabel.toArray())
-
+        // Write the rest of the labels
         if (name.labels.size > 1) {
             writeName(Name(name.labels[1..]))
         } else {
@@ -136,23 +152,8 @@ class MessageBuffer {
         buffer.write([highByte, lowByte])
     }
 
-    func writeQuestion(question: Question): Unit {
-        writeName(question.name)
-        buffer.writeUInt16(question.qType)
-        buffer.writeUInt16(question.qClass)
-    }
-
-    func writeResourceRecord(record: ResourceRecord): Unit {
-        writeName(record.name)
-        buffer.writeUInt16(record.rType)
-        buffer.writeUInt16(record.rClass)
-        buffer.writeUInt32(record.ttl)
-        buffer.writeUInt16(record.rdLength)
-        writeRDate(record.rData)
-    }
-
-    private func writeRDate(record: Record): Unit {
-        match (record) {
+    private func writeRDate(rdata: RData): Unit {
+        match (rdata) {
             case A(ipv4) => 
                 buffer.write(ipv4.getAddressBytes())
             case NS(name) => 

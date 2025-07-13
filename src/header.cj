@@ -79,7 +79,7 @@ extend UInt8 {
 
 // Header for a DNS message header.
 public struct Header {
-    public Header(
+    Header(
         public let id: UInt16,
         public let response: Bool,
         public let opCode: OpCode,
@@ -93,9 +93,10 @@ public struct Header {
         public let nsCount: UInt16,
         public let arCount: UInt16
     ) {}
-}
+} 
 
 extend Header {
+    // Create a Header from a byte buffer
     static func fromBytes<T>(buffer: T): Header where T <: InputStream & Seekable  {
         let id = readUInt16(buffer).getOrThrow({ =>
             Exception("Failed to read ID from buffer")
@@ -144,6 +145,7 @@ extend Header {
         )
     }
 
+    // getFlags returns the flags as a UInt16
     public func getFlags(): UInt16 {
         var flags: UInt16 = 0
         if (response) {

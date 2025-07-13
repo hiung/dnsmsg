@@ -4,7 +4,6 @@ import std.unittest.*
 import std.unittest.testmacro.*
 import std.io.*
 import std.net.*
-import std.time.*
 
 @Test
 class MessageTest {
@@ -59,7 +58,7 @@ class MessageTest {
         @Expect(answer.ttl == 60)
         @Expect(answer.rdLength == 4)
         @Expect(match (answer.rData) {
-            case Record.A(addr) => addr.toString() == "192.168.1.1"
+            case RData.A(addr) => addr.toString() == "192.168.1.1"
             case _ => false
         })
         println(" ipv4 address: ${answer.rData.toString()}")
@@ -143,7 +142,7 @@ class MessageTest {
             @Expect(message.answers[0].rClass == ClassIN)
             @Expect(message.answers[0].rdLength == 4) // RDATA length is 4 bytes
             @Expect(match (message.answers[0].rData) {
-                case Record.A(addr) => addr.toString() == "123.249.12.207"
+                case RData.A(addr) => addr.toString() == "123.249.12.207"
                 case _ => false
             })          
         }

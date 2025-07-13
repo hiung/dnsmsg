@@ -6,15 +6,13 @@ import std.io.*
 
 // Name represents a domain name, which is a sequence of labels separated by dots.
 public struct Name {
-    Name(
-        public let labels: Array<String>
-    ) {}
+    Name(public let labels: Array<String>) {}
 
     public init(name: String) {
         if (name.isEmpty()) {
             throw Exception("Name cannot be empty")
         }
-        
+
         labels = name.trimEnd(" .").toLower().split(".")
     }
 }
@@ -25,12 +23,12 @@ extend Name <: Hashable {
     }
 }
 
-extend Name <: Equatable<Name>{
+extend Name <: Equatable<Name> {
     public operator func ==(rhs: Name): Bool {
         if (this.hashCode() != rhs.hashCode()) {
-            return false    
+            return false
         }
-        return  true
+        return true
     }
 }
 
@@ -47,28 +45,9 @@ extend Name {
             if (length == 0) {
                 break // End of the name
             } else if ((length & 0b1100_0000) == 0b1100_0000) { // Check if the first two bits are set, indicating a pointer
-                // Combine the next 14 bits to form the pointer
-                let pointer = Int64((UInt16((length & 0b0011_1111)) << 8) | UInt16(readUInt8(buffer).getOrThrow(
-                    {
-                        => Exception("Failed to read pointer from buffer")
-                    })))
-
-                if (pointer < 0 || pointer >= buffer.length) {
-                    throw Exception("Invalid pointer value: ${pointer}") // Invalid pointer
-                }
-                // Save the current position
-                let prePos = buffer.position
-                // Seek to the pointer position 
-                buffer.seek(SeekPosition.Begin(pointer))
-                // Read the name from the pointer
-                // This will recursively read the name from the pointer 
-                let nameFromPointer = Name.fromBytes(buffer)
-                // Append the labels from the name read from the pointer
+                let nameFromPointer = readCompressedName(buffer, length)
                 labels.add(all: nameFromPointer.labels)
-                // Reset to original position
-                buffer.seek(SeekPosition.Begin(prePos))
-                // Exit the loop after processing the pointer
-                break
+                break // End of the name after reading a pointer
             } else if (length > 0b0011_1111) {
                 throw Exception("Invalid label length: ${length}")
             }
@@ -83,6 +62,30 @@ extend Name {
         }
 
         return Name(labels.toArray())
+    }
+
+    private static func readCompressedName<T>(buffer: T, highByte: UInt8): Name where T <: InputStream & Seekable {
+        // Combine the next 14 bits to form the pointer
+        let pointer = Int64((UInt16((highByte & 0b0011_1111)) << 8) | UInt16(readUInt8(buffer).getOrThrow(
+            {
+                => Exception("Failed to read pointer from buffer")
+            })))
+
+        // Save the current position
+        let currentPos = buffer.position
+
+        if (pointer < 0 || pointer >= currentPos) {
+            throw Exception("Invalid pointer value: ${pointer}") // Invalid pointer
+        }
+
+        // Seek to the pointer position 
+        buffer.seek(SeekPosition.Begin(pointer))
+        // Read the name from the pointer
+        // This will recursively read the name from the pointer 
+        let name = Name.fromBytes(buffer)
+        // Reset to original position
+        buffer.seek(SeekPosition.Begin(currentPos))
+        return name
     }
 
     public func toString(): String {
