@@ -96,37 +96,36 @@ public struct Header {
 }
 
 extend Header {
-    public static func fromStream<T>(stream: T): Header where T <: InputStream & Seekable  {
-        let id = readUInt16(stream).getOrThrow({ =>
-            Exception("Failed to read ID from stream")
+    static func fromBytes<T>(buffer: T): Header where T <: InputStream & Seekable  {
+        let id = readUInt16(buffer).getOrThrow({ =>
+            Exception("Failed to read ID from buffer")
         })
-        let flags = readUInt16(stream).getOrThrow({ =>
-            Exception("Failed to read flags from stream")
+        let flags = readUInt16(buffer).getOrThrow({ =>
+            Exception("Failed to read flags from buffer")
         })
         // Parse the flags
         // The flags are structured as follows:
         // response (1 bit), opcode (4 bits), authoritative (1 bit), truncated (1 bit),
         // recursion desired (1 bit), recursion available (1 bit),Z (3 bit), rcode (4 bits)
-        let response = (flags & 0x0001 << 15) != 0
+        let response = (flags & 1 << 15) != 0
         let opcode = (UInt8(flags >> 11) & 0x0F).toOpCode()
-        let authoritative = (flags & 0x0001 << 10) != 0
-        let truncated = (flags & 0x0001 << 9) != 0
-        let recursionDesired = (flags & 0x0001 << 8) != 0
-        let recursionAvailable = (flags & 0x0001 << 7) != 0
+        let authoritative = (flags & 1 << 10) != 0
+        let truncated = (flags & 1 << 9) != 0
+        let recursionDesired = (flags & 1 << 8) != 0
+        let recursionAvailable = (flags & 1 << 7) != 0
         let rcode = (UInt8(flags & 0x0F)).toRCode()
-
-        
-        let qdCount = readUInt16(stream).getOrThrow({ =>
-            Exception("Failed to read question count from stream")
+  
+        let qdCount = readUInt16(buffer).getOrThrow({ =>
+            Exception("Failed to read question count from buffer")
         })
-        let anCount = readUInt16(stream).getOrThrow({ =>
-            Exception("Failed to read answer count from stream")
+        let anCount = readUInt16(buffer).getOrThrow({ =>
+            Exception("Failed to read answer count from buffer")
         })
-        let nsCount = readUInt16(stream).getOrThrow({ =>
-            Exception("Failed to read authority count from stream")
+        let nsCount = readUInt16(buffer).getOrThrow({ =>
+            Exception("Failed to read authority count from buffer")
         })
-        let arCount = readUInt16(stream).getOrThrow({ =>
-            Exception("Failed to read additional count from stream")
+        let arCount = readUInt16(buffer).getOrThrow({ =>
+            Exception("Failed to read additional count from buffer")
         })
 
         return Header(
@@ -145,32 +144,26 @@ extend Header {
         )
     }
 
-    public static func tryFromStream<T>(data: T): Option<Header> where T <: InputStream & Seekable {
-        try {
-            Header.fromStream(data)
-        } catch (_) {
-            None
+    public func getFlags(): UInt16 {
+        var flags: UInt16 = 0
+        if (response) {
+            flags |= 1 << 15 // Response bit
+            
         }
-    }
-
-    public func toArray(): Array<UInt8> {
-        let flags = (
-            (if (response) {0x0001} else {0}) << 15 |
-            (UInt16(opCode.toUInt8()) & 0x0F) << 11 |
-            (if (authoritative) {0x0001} else {0}) << 10 |
-            (if (truncated) {0x0001} else {0}) << 9 |
-            (if (recursionDesired) {0x0001} else {0}) << 8 |
-            (if (recursionAvailable) {0x0001} else {0}) << 7 |
-            UInt16(rCode.toUInt8()) & 0x0F
-        )
-
-        return [
-            UInt8(id >> 8), UInt8(id & 0xFF),
-            UInt8(flags >> 8), UInt8(flags & 0xFF),
-            UInt8(qdCount >> 8), UInt8(qdCount & 0xFF),
-            UInt8(anCount >> 8), UInt8(anCount & 0xFF),
-            UInt8(nsCount >> 8), UInt8(nsCount & 0xFF),
-            UInt8(arCount >> 8), UInt8(arCount & 0xFF)
-        ]
+        flags |= (UInt16(opCode.toUInt8())) << 11 // Opcode bits
+        if (authoritative) {
+            flags |= 1 << 10 // Authoritative bit
+        }
+        if (truncated) {
+            flags |= 1 << 9 // Truncated bit
+        }
+        if (recursionDesired) {
+            flags |= 1 << 8 // Recursion desired bit
+        }
+        if (recursionAvailable) {
+            flags |= 1 << 7 // Recursion available bit
+        }
+        flags |= UInt16(rCode.toUInt8() & 0x0F) // RCode bits
+        return flags
     }
 }

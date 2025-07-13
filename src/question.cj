@@ -13,26 +13,14 @@ public struct Question {
 }
 
 extend Question {
-    public static func fromStream<T>(stream: T): Question where T <: InputStream & Seekable {
+    static func fromBytes<T>(stream: T): Question where T <: InputStream & Seekable {
         // Read the name
-        let name = Name.fromStream(stream)
+        let name = Name.fromBytes(stream)
 
         // Read the type and class
         let qType = readUInt16(stream).getOrThrow({=> Exception("Failed to read question type from stream")})
         let qClass = readUInt16(stream).getOrThrow({=> Exception("Failed to read question class from stream")})
 
         return Question(name, qType, qClass)
-    }
-
-    public static func tryFromStream<T>(stream: T): Option<Question> where T <: InputStream & Seekable {
-        try {
-            Question.fromStream(stream)
-        } catch (_) {
-            None
-        }
-    }
-
-    public func toArray(): Array<UInt8> {
-        name.toArray() + [UInt8(qType >> 8), UInt8(qType & 0xFF), UInt8(qClass >> 8), UInt8(qClass & 0xFF)]
     }
 }
