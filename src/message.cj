@@ -201,9 +201,13 @@ private class MessageBuffer {
                 buffer.writeUInt16(weight)
                 buffer.writeUInt16(port)
                 buffer.write(getNameBytes(target))
-            case OPT(code, options) => 
-                buffer.writeUInt16(code)
-                buffer.write(options)
+            case OPT(options) => 
+                for (opt in options) {
+                    buffer.writeUInt16(opt.code)
+                    let length = opt.data.size
+                    buffer.writeUInt16(UInt16(length))
+                    buffer.write(opt.data)
+                }
             case Unknown(_, data) =>
                 buffer.write(data)
         }

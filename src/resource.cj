@@ -2,6 +2,7 @@ package dnsmsg
 
 import std.net.*
 import std.io.*
+import std.collection.*
 
 // Resource for DNS answers, authorities, and additionals.
 public struct ResourceRecord {
@@ -90,10 +91,14 @@ extend ResourceRecord {
             let target = Name.fromBytes(buffer)
             RData.SRV(priority, weight, port, target)
         } else if (rType == TypeOPT) {
-            let extendedRCode = readUInt16(buffer) ?? throw Exception("Failed to read OPT extended RCODE from buffer")
-            let optionsLength = rdLength - 2 // 2 bytes for extended RCODE
-            let options = readBytes(buffer, Int64(optionsLength)) ?? throw Exception("Failed to read OPT options from buffer")
-            RData.OPT(extendedRCode, options)
+            let options = ArrayList<OPTValue>()
+            while (buffer.position < currentPos + Int64(rdLength)) {
+                let code = readUInt16(buffer) ?? throw Exception("Failed to read OPT code from buffer")
+                let length = readUInt16(buffer) ?? throw Exception("Failed to read OPT length from buffer")
+                let data = readBytes(buffer, Int64(length)) ?? throw Exception("Failed to read OPT data from buffer")
+                options.add(OPTValue(code, data.toArray()))
+            }
+            RData.OPT(options.toArray())
         } else {
             let data = readBytes(buffer, Int64(rdLength)) ?? throw Exception("Failed to read RDATA from buffer")
             RData.Unknown(rType, data)
@@ -121,7 +126,7 @@ public enum RData {
     | TXT(String)
     | AAAA(IPv6Address)
     | SRV(UInt16, UInt16, UInt16, Name) // priority, weight, port, target
-    | OPT(UInt16, Array<UInt8>) // extended RCODE, options
+    | OPT(Array<OPTValue>) 
     | Unknown(Type, Array<UInt8>)
 
     public func toString(): String {
@@ -138,7 +143,7 @@ public enum RData {
             case TXT(text) => "TXT: ${text}"
             case AAAA(ipv6) => "AAAA: ${ipv6.toString()}"
             case SRV(priority, weight, port, target) => "SRV: Priority=${priority}, Weight=${weight}, Port=${port}, Target=${target.toString()}"
-            case OPT(code, options) => "OPT: Code=${code}, Options=${options}"
+            case OPT(options) => "OPT: ${String.join(options.map({opt => opt.toString()}), delimiter:",")}"
             case Unknown(_type, data) => "Unknown Record Type(${_type}): Data=${data}"
         }
     }
@@ -157,5 +162,16 @@ public struct SOAValue {
 
     public func toString(): String {
         return "${mname.toString()} ${rname.toString()} ${serial} ${refresh} ${retry} ${expire} ${minimum}"
+    }
+}
+
+public struct OPTValue {
+    public OPTValue(
+        public let code: UInt16,
+        public let data: Array<UInt8>
+    ) {}
+
+    public func toString(): String {
+        return "Code=${code}, Data=${data.toString()}"
     }
 }
