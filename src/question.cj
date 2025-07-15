@@ -18,8 +18,8 @@ extend Question {
         let name = Name.fromBytes(buffer)
 
         // Read the type and class
-        let qType = readUInt16(buffer).getOrThrow({=> Exception("Failed to read question type from stream")})
-        let qClass = readUInt16(buffer).getOrThrow({=> Exception("Failed to read question class from stream")})
+        let qType = readUInt16(buffer) ?? throw Exception("Failed to read question type from bytes")
+        let qClass = readUInt16(buffer) ?? throw Exception("Failed to read question class from bytes")
 
         return Question(name, qType, qClass)
     }

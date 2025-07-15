@@ -8,7 +8,7 @@ import std.net.*
 @Test
 class ResourceTest {
     @TestCase
-    func testResourceFromStreamForA() {
+    func testResourceFromBytesForA() {
         let data: Array<UInt8> = [
             12,
             b'c',
@@ -52,7 +52,6 @@ class ResourceTest {
         @Expect(resource.rType == TypeA)
         @Expect(resource.rClass == ClassIN)
         @Expect(resource.ttl == 60)
-        @Expect(resource.rdLength == 4)
         @Expect(match (resource.rData) {
             case RData.A(addr) => addr.toString() == "192.168.1.1"
             case _ => false
@@ -60,7 +59,7 @@ class ResourceTest {
     }
 
     @TestCase
-    func testResourceFromStreamForNS() {
+    func testResourceFromBytesForNS() {
         let data: Array<UInt8> = [
             12,
             b'c',
@@ -103,7 +102,6 @@ class ResourceTest {
         @Expect(resource.rType == TypeNS)
         @Expect(resource.rClass == ClassIN)
         @Expect(resource.ttl == 60)
-        @Expect(resource.rdLength == 5)
         @Expect(match (resource.rData) {
             case RData.NS(name) => name.toString() == "ns.cangjie-lang.cn"
             case _ => false

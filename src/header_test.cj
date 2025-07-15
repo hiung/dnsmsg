@@ -82,16 +82,16 @@ class HeaderTest {
 
         let header = Header.fromBytes(buffer)
         @Expect(header.id == 0xdb42)
-        @Expect(header.response == false)
-        @Expect(match (header.opCode) {
+        @Expect(header.flags.response == false)
+        @Expect(match (header.flags.opCode) {
             case OpCode.Query => true
             case _ => false
         })
-        @Expect(header.authoritative == false)
-        @Expect(header.truncated == false)
-        @Expect(header.recursionDesired == true)
-        @Expect(header.recursionAvailable == false)
-        @Expect(match (header.rCode) {
+        @Expect(header.flags.authoritative == false)
+        @Expect(header.flags.truncated == false)
+        @Expect(header.flags.recursionDesired == true)
+        @Expect(header.flags.recursionAvailable == false)
+        @Expect(match (header.flags.rCode) {
             case RCode.NoError => true
             case _ => false
         })

@@ -87,18 +87,20 @@ extend Message {
 }
 
 // MessageBuffer is a utility class for constructing DNS messages in a byte buffer.
-class MessageBuffer {
+private class MessageBuffer {
+    // buffer is the byte buffer where the message is constructed.
     private let buffer: ByteBuffer
-    private let nameMap: HashMap<Name, Int64>
+    // nameMap is a map to keep track of names and their corresponding pointers.
+    private let nameMap: HashMap<Name, UInt16>
 
     MessageBuffer() {
-        this.buffer = ByteBuffer()
-        this.nameMap = HashMap<Name, Int64>()
+        buffer = ByteBuffer()
+        nameMap = HashMap<Name, UInt16>()
     }
 
     func writeHeader(header: Header): Unit {
         buffer.writeUInt16(header.id)
-        buffer.writeUInt16(header.getFlags())
+        buffer.writeUInt16(header.flags.toUInt16())
         buffer.writeUInt16(header.qdCount)
         buffer.writeUInt16(header.anCount)
         buffer.writeUInt16(header.nsCount)
@@ -106,63 +108,71 @@ class MessageBuffer {
     }
 
     func writeQuestion(question: Question): Unit {
-        writeName(question.name)
+        buffer.write(getNameBytes(question.name))
         buffer.writeUInt16(question.qType)
         buffer.writeUInt16(question.qClass)
     }
 
     func writeResourceRecord(record: ResourceRecord): Unit {
-        writeName(record.name)
+        buffer.write(getNameBytes(record.name))
         buffer.writeUInt16(record.rType)
         buffer.writeUInt16(record.rClass)
         buffer.writeUInt32(record.ttl)
-        buffer.writeUInt16(record.rdLength)
-        writeRDate(record.rData)
+        let rDataBytes = getRDataBytes(record.rData)
+        let rdLength = UInt16(rDataBytes.size)
+        buffer.writeUInt16(rdLength)
+        buffer.write(rDataBytes)
     }
 
-    private func writeName(name: Name): Unit { 
+    private func getNameBytes(name: Name): Array<UInt8> { 
+        let buffer = ByteBuffer()
         if (nameMap.contains(name)) {
             // If the name is already in the nameMap, write a pointer
             let pointer = nameMap[name]
-            writePointer(pointer)
-            return
+            buffer.writeUInt16(pointer)
+            return buffer.bytes()
         }
+
         // If the name is not in the nameMap, add it and pointer to nameMap
-        nameMap.add(name, buffer.length)
+        let pointer = getPointer()
+        nameMap.add(name, pointer)
+
         // Write the first label
         let currentLabel = name.labels[0]
         buffer.writeByte(UInt8(currentLabel.size))
         buffer.write(currentLabel.toArray())
+
         // Write the rest of the labels
         if (name.labels.size > 1) {
-            writeName(Name(name.labels[1..]))
+            buffer.write(getNameBytes(Name(name.labels[1..])))
         } else {
             buffer.writeByte(0) // End of name
         }
+
+        return buffer.bytes()
     }
     
-    private func writePointer(pointer: Int64) {
-        if (pointer < 0 || pointer > 0x3FFF) {
-            throw Exception("Invalid pointer value: ${pointer}")
+    private func getPointer(): UInt16 {
+        let length = buffer.length
+        if (length < 0 || length > 0x3FFF) {
+            throw Exception("Invalid pointer value: ${length}")
         }
 
-        let highByte = UInt8((pointer >> 8) | 0b1100_0000) // Set the two high bits to 11
-        let lowByte = UInt8(pointer & 0xFF)
-
-        buffer.write([highByte, lowByte])
+        return UInt16(length | 0xC000)
     }
 
-    private func writeRDate(rdata: RData): Unit {
+    private func getRDataBytes(rdata: RData): Array<UInt8> {
+        let buffer = ByteBuffer()
         match (rdata) {
             case A(ipv4) => 
                 buffer.write(ipv4.getAddressBytes())
             case NS(name) => 
-                writeName(name)
+                buffer.write(getNameBytes(name))
             case CNAME(name) => 
-                writeName(name)
+                buffer.write(getNameBytes(name))
             case SOA(soaVal) => 
-                writeName(soaVal.mname)
-                writeName(soaVal.rname)
+                buffer.write(getNameBytes(soaVal.mname))
+                buffer.write(getNameBytes(soaVal.rname))
                 buffer.writeUInt32(soaVal.serial)
                 buffer.writeUInt32(soaVal.refresh)
                 buffer.writeUInt32(soaVal.retry)
@@ -172,16 +182,16 @@ class MessageBuffer {
                 buffer.write(ipv4.getAddressBytes())
                 buffer.writeByte(protocol)
                 buffer.write(bitmap.toArray())
-            case PTR(name) => writeName(name)
+            case PTR(name) => buffer.write(getNameBytes(name))
             case HINFO(cpu, os) => 
                 buffer.write(cpu.toArray())
                 buffer.write(os.toArray())
             case MINFO(mailbox, errorsMailbox) => 
-                writeName(mailbox)
-                writeName(errorsMailbox)
+                buffer.write(getNameBytes(mailbox))
+                buffer.write(getNameBytes(errorsMailbox))
             case MX(preference, name) => 
                 buffer.writeUInt16(preference)
-                writeName(name)
+                buffer.write(getNameBytes(name))
             case TXT(text) => 
                 buffer.write(text.toArray())
             case AAAA(ipv6) =>  
@@ -190,16 +200,63 @@ class MessageBuffer {
                 buffer.writeUInt16(priority)
                 buffer.writeUInt16(weight)
                 buffer.writeUInt16(port)
-                writeName(target)
+                buffer.write(getNameBytes(target))
             case OPT(code, options) => 
                 buffer.writeUInt16(code)
                 buffer.write(options)
             case Unknown(_, data) =>
                 buffer.write(data)
         }
+
+        return buffer.bytes()
     }
 
     func bytes(): Array<UInt8> {
         return buffer.bytes()
+    }
+}
+
+public class MessageBuilder {
+    private var header: Header
+    private let questions: ArrayList<Question> = ArrayList<Question>()
+    private let answers: ArrayList<ResourceRecord> = ArrayList<ResourceRecord>()
+    private let authorities: ArrayList<ResourceRecord> = ArrayList<ResourceRecord>()
+    private let additionals: ArrayList<ResourceRecord> = ArrayList<ResourceRecord>()
+
+    public MessageBuilder(id!: UInt16) {
+        header = Header(id, Flags(0), 0, 0, 0, 0)
+    }
+
+    public func setFlags(flags: Flags): MessageBuilder {
+        header.flags = flags
+        return this
+    }
+
+    public func addQuestion(question: Question): MessageBuilder {
+        questions.add(question)
+        header.qdCount += 1
+        return this
+    }
+
+    public func addAnswer(answer: ResourceRecord): MessageBuilder {
+        answers.add(answer)
+        header.anCount += 1
+        return this
+    }
+
+    public func addAuthority(authority: ResourceRecord): MessageBuilder {
+        authorities.add(authority)
+        header.nsCount += 1
+        return this
+    }
+
+    public func addAdditional(additional: ResourceRecord): MessageBuilder {
+        additionals.add(additional)
+        header.arCount += 1
+        return this
+    }
+
+    func build(): Message {
+        return Message(header, questions.toArray(), answers.toArray(), authorities.toArray(), additionals.toArray())
     }
 }

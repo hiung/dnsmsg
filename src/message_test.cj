@@ -56,7 +56,6 @@ class MessageTest {
         @Expect(answer.rType == TypeA)
         @Expect(answer.rClass == ClassIN)
         @Expect(answer.ttl == 60)
-        @Expect(answer.rdLength == 4)
         @Expect(match (answer.rData) {
             case RData.A(addr) => addr.toString() == "192.168.1.1"
             case _ => false
@@ -70,7 +69,7 @@ class MessageTest {
             i += 1 
         }
 
-        // @Expect(message.toBytes() == data) 
+        @Expect(message.toBytes() == data) 
     }
 
     @TestCase
@@ -109,16 +108,16 @@ class MessageTest {
             let message = Message.fromBytes(buffer)
 
             @Expect(message.header.id == 0x00d0) // ID from header
-            @Expect(message.header.response == true) // Response flag
-            @Expect(match (message.header.opCode) {
+            @Expect(message.header.flags.response == true) // Response flag
+            @Expect(match (message.header.flags.opCode) {
                 case OpCode.Query => true // Opcode should be Query
                 case _ => false
             }) 
-            @Expect(message.header.authoritative == false) // Authoritative flag
-            @Expect(message.header.truncated == false) // Truncated flag
-            @Expect(message.header.recursionDesired == false) // Recursion desired flag
-            @Expect(message.header.recursionAvailable == true) // Recursion available flag
-            @Expect(match (message.header.rCode) {
+            @Expect(message.header.flags.authoritative == false) // Authoritative flag
+            @Expect(message.header.flags.truncated == false) // Truncated flag
+            @Expect(message.header.flags.recursionDesired == false) // Recursion desired flag
+            @Expect(message.header.flags.recursionAvailable == true) // Recursion available flag
+            @Expect(match (message.header.flags.rCode) {
                 case RCode.NoError => true // RCode should be NoError
                 case _ => false
             })
@@ -140,7 +139,93 @@ class MessageTest {
             @Expect(message.answers[0].name.toString() == "cangjie-lang.cn")
             @Expect(message.answers[0].rType == TypeA)
             @Expect(message.answers[0].rClass == ClassIN)
-            @Expect(message.answers[0].rdLength == 4) // RDATA length is 4 bytes
+            @Expect(match (message.answers[0].rData) {
+                case RData.A(addr) => addr.toString() == "123.249.12.207"
+                case _ => false
+            })          
+        }
+    }
+
+    @TestCase
+    func testMessageBuilder() {
+        let message = MessageBuilder(id: 0x1234)
+            .addQuestion(Question(Name("example.com"), TypeA, ClassIN))
+            .addAnswer(ResourceRecord(
+                Name("example.com"),
+                TypeA,
+                ClassIN,
+                3600,
+                RData.A(IPv4Address(0x7f000001))))
+            .setFlags(Flags(
+                response: true))
+            .build()
+
+        @Expect(message.header.id == 0x1234)
+        @Expect(message.header.flags.response == true)
+        @Expect(match (message.header.flags.opCode) {
+            case OpCode.Query => true
+            case _ => false 
+        })
+        @Expect(message.questions.size == 1)
+        @Expect(message.answers.size == 1)
+        @Expect(message.authorities.size == 0)
+        @Expect(message.additionals.size == 0)
+    }
+
+    @TestCase
+    func testMessageBuilderFromBytesRespFromDNSServer() {
+        let message = MessageBuilder(id: 0x00d0)
+            .addQuestion(Question(Name("cangjie-lang.cn"), TypeA, ClassIN))
+            .build()
+        let payload = message.toBytes()
+        let bytes = Array<UInt8>(512, repeat: 0) // DNS messages are typically small, 512 bytes is a common size
+
+        try (udpSocket = UdpSocket(bindAt: 8888)) {
+            udpSocket.sendTimeout = Duration.second * 2
+            udpSocket.receiveTimeout = Duration.second * 2
+            udpSocket.bind()
+            udpSocket.sendTo(IPSocketAddress("192.168.0.2", 53), payload)
+            let (servAddr, bytesRead) = udpSocket.receiveFrom(bytes)
+            
+            @Expect(bytesRead > 0)
+
+            let buffer = ByteBuffer()
+            buffer.write(bytes)
+
+            let message = Message.fromBytes(buffer)
+
+            @Expect(message.header.id == 0x00d0) // ID from header
+            @Expect(message.header.flags.response == true) // Response flag
+            @Expect(match (message.header.flags.opCode) {
+                case OpCode.Query => true // Opcode should be Query
+                case _ => false
+            }) 
+            @Expect(message.header.flags.authoritative == false) // Authoritative flag
+            @Expect(message.header.flags.truncated == false) // Truncated flag
+            @Expect(message.header.flags.recursionDesired == false) // Recursion desired flag
+            @Expect(message.header.flags.recursionAvailable == true) // Recursion available flag
+            @Expect(match (message.header.flags.rCode) {
+                case RCode.NoError => true // RCode should be NoError
+                case _ => false
+            })
+            @Expect(message.header.qdCount == 1) // One question
+            @Expect(message.header.anCount == 1) // No answers
+            @Expect(message.header.nsCount == 0) // Four authorities
+            @Expect(message.header.arCount == 0) // No additionals
+
+            @Expect(message.questions.size == 1) // One question
+            @Expect(message.answers.size == 1) // No answers
+            @Expect(message.authorities.size == 0) // Four authorities
+            @Expect(message.additionals.size == 0) // No additionals
+
+            @Expect(message.questions[0].name.toString() == "cangjie-lang.cn")
+            @Expect(message.questions[0].qType == TypeA)
+            @Expect(message.questions[0].qClass == ClassIN)
+
+            // check answer
+            @Expect(message.answers[0].name.toString() == "cangjie-lang.cn")
+            @Expect(message.answers[0].rType == TypeA)
+            @Expect(message.answers[0].rClass == ClassIN)
             @Expect(match (message.answers[0].rData) {
                 case RData.A(addr) => addr.toString() == "123.249.12.207"
                 case _ => false

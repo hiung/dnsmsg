@@ -44,20 +44,20 @@ func readBytes<T>(buffer: T, length: Int64): Option<Array<UInt8>> where T <: Inp
         buffer.seek(SeekPosition.Current(-bytesRead)) // Seek back to the current position
         return None // Not enough data read, return None
     }
-    
+
     return bytes
 }
 
 extend ByteBuffer {
     func writeUInt16(value: UInt16) {
-        this.write([
+        write([
             UInt8((value >> 8) & 0xFF),
             UInt8(value & 0xFF)
         ])
     }
 
     func writeUInt32(value: UInt32) {
-        this.write([
+        write([
             UInt8((value >> 24) & 0xFF),
             UInt8((value >> 16) & 0xFF),
             UInt8((value >> 8) & 0xFF),

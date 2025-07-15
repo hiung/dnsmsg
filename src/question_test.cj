@@ -7,7 +7,7 @@ import std.io.*
 @Test
 class QuestionTest {
     @TestCase
-    func testFromStream() {
+    func testFromBytes() {
         let data: Array<UInt8> = [
                 12, b'c', b'a', b'n', b'g', b'j', b'i', b'e', b'-', b'l', b'a', b'n', b'g', // "cangjie-lang"
                 2, b'c', b'n', // "cn"
@@ -26,7 +26,7 @@ class QuestionTest {
     }
 
     @TestCase
-    func testFromStreamInvalidData() {
+    func testFromByteInvalidData() {
         let data: Array<UInt8> = [12, b'c', b'a', b'n', b'g', b'j', b'i', b'e', b'-', b'l', b'a', b'n', b'g', // "cangjie-lang"
             2, b'c', b'n', // "cn"
             0, // end of name

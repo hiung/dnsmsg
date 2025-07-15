@@ -77,80 +77,36 @@ extend UInt8 {
     }
 }
 
-// Header for a DNS message header.
-public struct Header {
-    Header(
-        public let id: UInt16,
-        public let response: Bool,
-        public let opCode: OpCode,
-        public let authoritative: Bool,
-        public let truncated: Bool,
-        public let recursionDesired: Bool,
-        public let recursionAvailable: Bool,
-        public let rCode: RCode,
-        public let qdCount: UInt16,
-        public let anCount: UInt16,
-        public let nsCount: UInt16,
-        public let arCount: UInt16
+public struct Flags {
+    public Flags(
+        public let response!: Bool = false,
+        public let opCode!: OpCode = OpCode.Query,
+        public let authoritative!: Bool = false,
+        public let truncated!: Bool = false,
+        public let recursionDesired!: Bool = false,
+        public let recursionAvailable!: Bool = false,
+        public let rCode!: RCode = RCode.NoError
     ) {}
-} 
 
-extend Header {
-    // Create a Header from a byte buffer
-    static func fromBytes<T>(buffer: T): Header where T <: InputStream & Seekable  {
-        let id = readUInt16(buffer).getOrThrow({ =>
-            Exception("Failed to read ID from buffer")
-        })
-        let flags = readUInt16(buffer).getOrThrow({ =>
-            Exception("Failed to read flags from buffer")
-        })
+    public init(value: UInt16) {
         // Parse the flags
         // The flags are structured as follows:
         // response (1 bit), opcode (4 bits), authoritative (1 bit), truncated (1 bit),
         // recursion desired (1 bit), recursion available (1 bit),Z (3 bit), rcode (4 bits)
-        let response = (flags & 1 << 15) != 0
-        let opcode = (UInt8(flags >> 11) & 0x0F).toOpCode()
-        let authoritative = (flags & 1 << 10) != 0
-        let truncated = (flags & 1 << 9) != 0
-        let recursionDesired = (flags & 1 << 8) != 0
-        let recursionAvailable = (flags & 1 << 7) != 0
-        let rcode = (UInt8(flags & 0x0F)).toRCode()
-  
-        let qdCount = readUInt16(buffer).getOrThrow({ =>
-            Exception("Failed to read question count from buffer")
-        })
-        let anCount = readUInt16(buffer).getOrThrow({ =>
-            Exception("Failed to read answer count from buffer")
-        })
-        let nsCount = readUInt16(buffer).getOrThrow({ =>
-            Exception("Failed to read authority count from buffer")
-        })
-        let arCount = readUInt16(buffer).getOrThrow({ =>
-            Exception("Failed to read additional count from buffer")
-        })
-
-        return Header(
-            id,
-            response,
-            opcode,
-            authoritative,
-            truncated,
-            recursionDesired,
-            recursionAvailable,
-            rcode,
-            qdCount,
-            anCount,
-            nsCount,
-            arCount
-        )
+        response = (value & 1 << 15) != 0
+        opCode = (UInt8(value >> 11) & 0x0F).toOpCode()
+        authoritative = (value & 1 << 10) != 0
+        truncated = (value & 1 << 9) != 0
+        recursionDesired = (value & 1 << 8) != 0
+        recursionAvailable = (value & 1 << 7) != 0
+        rCode = (UInt8(value & 0x0F)).toRCode()
     }
 
-    // getFlags returns the flags as a UInt16
-    public func getFlags(): UInt16 {
+    public func toUInt16(): UInt16 {
         var flags: UInt16 = 0
         if (response) {
             flags |= 1 << 15 // Response bit
-            
+
         }
         flags |= (UInt16(opCode.toUInt8())) << 11 // Opcode bits
         if (authoritative) {
@@ -167,5 +123,38 @@ extend Header {
         }
         flags |= UInt16(rCode.toUInt8() & 0x0F) // RCode bits
         return flags
+    }
+}
+
+// Header for a DNS message header.
+public struct Header {
+    public Header(
+        public let id: UInt16,
+        public var flags: Flags,
+        public var qdCount: UInt16,
+        public var anCount: UInt16,
+        public var nsCount: UInt16,
+        public var arCount: UInt16
+    ) {}
+}
+
+extend Header {
+    // Create a Header from a byte buffer
+    static func fromBytes<T>(buffer: T): Header where T <: InputStream & Seekable {
+        let id = readUInt16(buffer) ?? throw Exception("Failed to read ID from buffer")
+        let flags = Flags(readUInt16(buffer) ?? throw Exception("Failed to read flags from buffer"))
+        let qdCount = readUInt16(buffer) ?? throw Exception("Failed to read question count from buffer")
+        let anCount = readUInt16(buffer) ?? throw Exception("Failed to read answer count from buffer")
+        let nsCount = readUInt16(buffer) ?? throw Exception("Failed to read authority count from buffer")
+        let arCount = readUInt16(buffer) ?? throw Exception("Failed to read additional count from buffer")
+
+        return Header(
+            id,
+            flags,
+            qdCount,
+            anCount,
+            nsCount,
+            arCount
+        )
     }
 }

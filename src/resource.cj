@@ -10,7 +10,6 @@ public struct ResourceRecord {
         public let rType: Type,
         public let rClass: Class,
         public let ttl: UInt32,
-        public let rdLength: UInt16,
         public let rData: RData // The decent rdata
     ) {}
 }
@@ -21,15 +20,15 @@ extend ResourceRecord {
         let name = Name.fromBytes(buffer)
 
         // Read the type, class, ttl, rdLength
-        let rType = readUInt16(buffer).getOrThrow({=> Exception("Failed to read resource type from buffer")})
-        let rClass = readUInt16(buffer).getOrThrow({=> Exception("Failed to read resource class from buffer")})
-        let ttl = readUInt32(buffer).getOrThrow({=> Exception("Failed to read TTL from buffer")})
-        let rdLength = readUInt16(buffer).getOrThrow({=> Exception("Failed to read RDATA length from buffer")})
+        let rType = readUInt16(buffer) ?? throw Exception("Failed to read resource type from buffer")
+        let rClass = readUInt16(buffer) ?? throw Exception("Failed to read resource class from buffer")
+        let ttl = readUInt32(buffer) ?? throw Exception("Failed to read TTL from buffer")
+        let rdLength = readUInt16(buffer) ?? throw Exception("Failed to read RDATA length from buffer")
 
         // Read the rdata
         let rdata = getRData(buffer, rType, rdLength)
 
-        return ResourceRecord(name, rType, rClass, ttl, rdLength, rdata)
+        return ResourceRecord(name, rType, rClass, ttl, rdata)
     }
 
     private static func getRData<T>(buffer: T, rType: Type, rdLength: UInt16): RData where T <: InputStream & Seekable {
@@ -40,7 +39,7 @@ extend ResourceRecord {
         let currentPos = buffer.position
 
         let rdata = if (rType == TypeA) {
-            let ipv4bites = readUInt32(buffer).getOrThrow({=> Exception("Failed to read A record data from buffer")})
+            let ipv4bites = readUInt32(buffer) ?? throw Exception("Failed to read A record data from buffer")
             RData.A(IPv4Address(ipv4bites))
         } else if (rType == TypeNS) {
             let name = Name.fromBytes(buffer)
@@ -51,18 +50,17 @@ extend ResourceRecord {
         } else if (rType == TypeSOA) {
             let mname = Name.fromBytes(buffer)
             let rname = Name.fromBytes(buffer)
-            let serial = readUInt32(buffer).getOrThrow({=> Exception("Failed to read SOA serial from buffer")})
-            let refresh = readUInt32(buffer).getOrThrow({=> Exception("Failed to read SOA refresh from buffer")})
-            let retry = readUInt32(buffer).getOrThrow({=> Exception("Failed to read SOA retry from buffer")})
-            let expire = readUInt32(buffer).getOrThrow({=> Exception("Failed to read SOA expire from buffer")})
-            let minimum = readUInt32(buffer).getOrThrow({=> Exception("Failed to read SOA minimum from buffer")})
+            let serial = readUInt32(buffer) ?? throw Exception("Failed to read SOA serial from buffer")
+            let refresh = readUInt32(buffer) ?? throw Exception("Failed to read SOA refresh from buffer")
+            let retry = readUInt32(buffer) ?? throw Exception("Failed to read SOA retry from buffer")
+            let expire = readUInt32(buffer) ?? throw Exception("Failed to read SOA expire from buffer")
+            let minimum = readUInt32(buffer) ?? throw Exception("Failed to read SOA minimum from buffer")
             RData.SOA(SOAValue(mname, rname, serial, refresh, retry, expire, minimum))
         } else if (rType == TypeWKS) {
-            let ipv4bytes = readUInt32(buffer).getOrThrow({=> Exception("Failed to read WKS IPv4 from buffer")})
-            let protocol = readUInt8(buffer).getOrThrow({=> Exception("Failed to read WKS protocol from buffer")})
+            let ipv4bytes = readUInt32(buffer) ?? throw Exception("Failed to read WKS IPv4 from buffer")
+            let protocol = readUInt8(buffer) ?? throw Exception("Failed to read WKS protocol from buffer")
             let bitmapLength = rdLength - 5 // 4 bytes for IPv4 + 1 byte for protocol
-            let bitmap = readBytes(buffer, Int64(bitmapLength)).getOrThrow(
-                {=> Exception("Failed to read WKS bitmap from buffer")})
+            let bitmap = readBytes(buffer, Int64(bitmapLength)) ?? throw Exception("Failed to read WKS bitmap from buffer")
             RData.WKS(IPv4Address(ipv4bytes), protocol, bitmap)
         } else if (rType == TypePTR) {
             let name = Name.fromBytes(buffer)
@@ -74,31 +72,30 @@ extend ResourceRecord {
             let errorsMailbox = Name.fromBytes(buffer)
             RData.MINFO(mailbox, errorsMailbox)
         } else if (rType == TypeMX) {
-            let preference = readUInt16(buffer).getOrThrow({=> Exception("Failed to read MX preference from buffer")})
+            let preference = readUInt16(buffer) ?? throw Exception("Failed to read MX preference from buffer")
             let name = Name.fromBytes(buffer)
             RData.MX(preference, name)
         } else if (rType == TypeTXT) {
-            let text = String.fromUtf8(readBytes(buffer, Int64(rdLength)).getOrThrow(
-                {=> Exception("Failed to read TXT record data from buffer")}))
+            let text = String.fromUtf8(readBytes(buffer, Int64(rdLength)) ??  throw Exception("Failed to read TXT record data from buffer"))
             RData.TXT(text)
         } else if (rType == TypeAAAA) {
-            let bytes = readBytes(buffer, 16).getOrThrow({=> Exception("Failed to read AAAA record data from buffer")})
+            let bytes = readBytes(buffer, 16) ?? throw Exception("Failed to read AAAA record data from buffer")
             RData.AAAA(
                 IPv6Address(bytes)
             )
         } else if (rType == TypeSRV) {
-            let priority = readUInt16(buffer).getOrThrow({=> Exception("Failed to read SRV priority from buffer")})
-            let weight = readUInt16(buffer).getOrThrow({=> Exception("Failed to read SRV weight from buffer")})
-            let port = readUInt16(buffer).getOrThrow({=> Exception("Failed to read SRV port from buffer")})
+            let priority = readUInt16(buffer) ?? throw Exception("Failed to read SRV priority from buffer")
+            let weight = readUInt16(buffer) ?? throw Exception("Failed to read SRV weight from buffer")
+            let port = readUInt16(buffer) ?? throw Exception("Failed to read SRV port from buffer")
             let target = Name.fromBytes(buffer)
             RData.SRV(priority, weight, port, target)
         } else if (rType == TypeOPT) {
-            let extendedRCode = readUInt16(buffer).getOrThrow({=> Exception("Failed to read OPT extended RCODE from buffer")})
+            let extendedRCode = readUInt16(buffer) ?? throw Exception("Failed to read OPT extended RCODE from buffer")
             let optionsLength = rdLength - 2 // 2 bytes for extended RCODE
-            let options = readBytes(buffer, Int64(optionsLength)).getOrThrow({=> Exception("Failed to read OPT options from buffer")})
+            let options = readBytes(buffer, Int64(optionsLength)) ?? throw Exception("Failed to read OPT options from buffer")
             RData.OPT(extendedRCode, options)
         } else {
-            let data = readBytes(buffer, Int64(rdLength)).getOrThrow({=> Exception("Failed to read RDATA from buffer")})
+            let data = readBytes(buffer, Int64(rdLength)) ?? throw Exception("Failed to read RDATA from buffer")
             RData.Unknown(rType, data)
         }
 
