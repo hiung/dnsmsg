@@ -70,6 +70,36 @@ class MessageTest {
         }
 
         @Expect(message.toBytes() == data) 
+
+        let uncompressedData : Array<UInt8> = [
+            // Header
+            0x01, 0x00, // ID
+            0x01, 0x00, // Flags (standard query)
+            0x00, 0x01, // QDCOUNT (1 question)
+            0x00, 0x01, // ANCOUNT (1 answer)
+            0x00, 0x00, // NSCOUNT (0 authorities)
+            0x00, 0x00, // ARCOUNT (0 additionals)
+
+            // Question
+            12, b'c', b'a',b'n', b'g', b'j', b'i', b'e', b'-', b'l', b'a', b'n', b'g', // "cangjie-lang"
+            2, b'c', b'n', // "cn"
+            0, // End of name
+            0, 1, // Type A
+            0, 1, // Class IN
+
+            // Answer
+            3, b'w', b'w', b'w', // "www"
+            12, b'c', b'a',b'n', b'g', b'j', b'i', b'e', b'-', b'l', b'a', b'n', b'g', // "cangjie-lang"
+            2, b'c', b'n', // "cn"
+            0, // End of name
+            0, 1, // Type A
+            0, 1, // Class IN
+            0, 0, 0, 60, // TTL 60 seconds
+            0, 4, // RDATA length
+            192, 168, 1, 1 // rdata for A record
+        ]
+
+        @Expect(message.toBytes(compress: false) == uncompressedData) 
     }
 
     @TestCase

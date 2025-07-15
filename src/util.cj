@@ -2,7 +2,7 @@ package dnsmsg
 
 import std.io.*
 
-func readUInt8<T>(buffer: T): Option<UInt8> where T <: InputStream & Seekable {
+func readUInt8<T>(buffer: T): ?UInt8 where T <: InputStream & Seekable {
     let byte = Array<UInt8>(1, repeat: 0)
     if (buffer.read(byte) == 0) {
         return None // No data read, return None
@@ -11,7 +11,7 @@ func readUInt8<T>(buffer: T): Option<UInt8> where T <: InputStream & Seekable {
     return byte[0]
 }
 
-func readUInt16<T>(buffer: T): Option<UInt16> where T <: InputStream & Seekable {
+func readUInt16<T>(buffer: T): ?UInt16 where T <: InputStream & Seekable {
     let bytes = Array<UInt8>(2, repeat: 0)
     let bytesRead = buffer.read(bytes)
     if (bytesRead != 2) {
@@ -22,7 +22,7 @@ func readUInt16<T>(buffer: T): Option<UInt16> where T <: InputStream & Seekable 
     return (UInt16(bytes[0]) << 8) | UInt16(bytes[1])
 }
 
-func readUInt32<T>(buffer: T): Option<UInt32> where T <: InputStream & Seekable {
+func readUInt32<T>(buffer: T): ?UInt32 where T <: InputStream & Seekable {
     let bytes = Array<UInt8>(4, repeat: 0)
     let bytesRead = buffer.read(bytes)
     if (bytesRead != 4) {
@@ -33,7 +33,7 @@ func readUInt32<T>(buffer: T): Option<UInt32> where T <: InputStream & Seekable 
     return (UInt32(bytes[0]) << 24) | (UInt32(bytes[1]) << 16) | (UInt32(bytes[2]) << 8) | UInt32(bytes[3])
 }
 
-func readBytes<T>(buffer: T, length: Int64): Option<Array<UInt8>> where T <: InputStream & Seekable {
+func readBytes<T>(buffer: T, length: Int64): ?Array<UInt8> where T <: InputStream & Seekable {
     if (length <= 0) {
         return None
     }
