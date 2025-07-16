@@ -6,7 +6,7 @@ import std.collection.*
 
 // Resource for DNS answers, authorities, and additionals.
 public struct ResourceRecord {
-    ResourceRecord(
+    public ResourceRecord(
         public let name: Name,
         public let rType: Type,
         public let rClass: Class,

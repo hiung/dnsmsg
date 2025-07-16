@@ -5,7 +5,7 @@ import std.io.*
 
 // Question for a DNS query.
 public struct Question {
-    Question(
+    public Question(
         public let name: Name,
         public let qType: Type,
         public let qClass: Class
