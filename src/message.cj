@@ -258,7 +258,7 @@ public class MessageBuilder {
         return this
     }
 
-    func build(): Message {
+    public func build(): Message {
         return Message(header, questions.toArray(), answers.toArray(), authorities.toArray(), additionals.toArray())
     }
 }
