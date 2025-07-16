@@ -57,8 +57,8 @@ extend Message {
         }
     }
 
-    public func toBytes(): Array<UInt8> {
-        let buffer = MessageBuffer()
+    public func toBytes(compress!: Bool = true): Array<UInt8> {
+        let buffer = MessageBuffer(compress: compress)
         // Write header
         buffer.writeHeader(header)
 
@@ -91,11 +91,15 @@ private class MessageBuffer {
     // buffer is the byte buffer where the message is constructed.
     private let buffer: ByteBuffer
     // nameMap is a map to keep track of names and their corresponding pointers.
-    private let nameMap: HashMap<Name, UInt16>
+    private let nameMap: ?HashMap<Name, UInt16>
 
-    MessageBuffer() {
+    MessageBuffer(compress!: Bool = true) {
         buffer = ByteBuffer()
-        nameMap = HashMap<Name, UInt16>()
+        nameMap = if (compress) {
+            HashMap<Name, UInt16>()
+        } else {
+            None
+        }
     }
 
     func writeHeader(header: Header): Unit {
@@ -124,18 +128,19 @@ private class MessageBuffer {
         buffer.write(rDataBytes)
     }
 
-    private func getNameBytes(name: Name): Array<UInt8> { 
+    private func getNameBytes(name: Name): Array<UInt8> {
         let buffer = ByteBuffer()
-        if (nameMap.contains(name)) {
-            // If the name is already in the nameMap, write a pointer
-            let pointer = nameMap[name]
-            buffer.writeUInt16(pointer)
-            return buffer.bytes()
+        if (let Some(nameMap) <- nameMap) {
+            if (nameMap.contains(name)) {
+                // If the name is already in the nameMap, write a pointer
+                let pointer = nameMap[name]
+                buffer.writeUInt16(pointer)
+                return buffer.bytes()
+            }
+            // If the name is not in the nameMap, add it and pointer to nameMap
+            let pointer = getPointer()
+            nameMap.add(name, pointer)
         }
-
-        // If the name is not in the nameMap, add it and pointer to nameMap
-        let pointer = getPointer()
-        nameMap.add(name, pointer)
 
         // Write the first label
         let currentLabel = name.labels[0]
@@ -151,7 +156,7 @@ private class MessageBuffer {
 
         return buffer.bytes()
     }
-    
+
     private func getPointer(): UInt16 {
         let length = buffer.length
         if (length < 0 || length > 0x3FFF) {
@@ -164,13 +169,10 @@ private class MessageBuffer {
     private func getRDataBytes(rdata: RData): Array<UInt8> {
         let buffer = ByteBuffer()
         match (rdata) {
-            case A(ipv4) => 
-                buffer.write(ipv4.getAddressBytes())
-            case NS(name) => 
-                buffer.write(getNameBytes(name))
-            case CNAME(name) => 
-                buffer.write(getNameBytes(name))
-            case SOA(soaVal) => 
+            case A(ipv4) => buffer.write(ipv4.getAddressBytes())
+            case NS(name) => buffer.write(getNameBytes(name))
+            case CNAME(name) => buffer.write(getNameBytes(name))
+            case SOA(soaVal) =>
                 buffer.write(getNameBytes(soaVal.mname))
                 buffer.write(getNameBytes(soaVal.rname))
                 buffer.writeUInt32(soaVal.serial)
@@ -178,38 +180,34 @@ private class MessageBuffer {
                 buffer.writeUInt32(soaVal.retry)
                 buffer.writeUInt32(soaVal.expire)
                 buffer.writeUInt32(soaVal.minimum)
-            case WKS(ipv4, protocol, bitmap) => 
+            case WKS(ipv4, protocol, bitmap) =>
                 buffer.write(ipv4.getAddressBytes())
                 buffer.writeByte(protocol)
                 buffer.write(bitmap.toArray())
             case PTR(name) => buffer.write(getNameBytes(name))
-            case HINFO(cpu, os) => 
+            case HINFO(cpu, os) =>
                 buffer.write(cpu.toArray())
                 buffer.write(os.toArray())
-            case MINFO(mailbox, errorsMailbox) => 
+            case MINFO(mailbox, errorsMailbox) =>
                 buffer.write(getNameBytes(mailbox))
                 buffer.write(getNameBytes(errorsMailbox))
-            case MX(preference, name) => 
+            case MX(preference, name) =>
                 buffer.writeUInt16(preference)
                 buffer.write(getNameBytes(name))
-            case TXT(text) => 
-                buffer.write(text.toArray())
-            case AAAA(ipv6) =>  
-                buffer.write(ipv6.getAddressBytes())
-            case SRV(priority, weight, port, target) => 
+            case TXT(text) => buffer.write(text.toArray())
+            case AAAA(ipv6) => buffer.write(ipv6.getAddressBytes())
+            case SRV(priority, weight, port, target) =>
                 buffer.writeUInt16(priority)
                 buffer.writeUInt16(weight)
                 buffer.writeUInt16(port)
                 buffer.write(getNameBytes(target))
-            case OPT(options) => 
-                for (opt in options) {
-                    buffer.writeUInt16(opt.code)
-                    let length = opt.data.size
-                    buffer.writeUInt16(UInt16(length))
-                    buffer.write(opt.data)
-                }
-            case Unknown(_, data) =>
-                buffer.write(data)
+            case OPT(options) => for (opt in options) {
+                buffer.writeUInt16(opt.code)
+                let length = opt.data.size
+                buffer.writeUInt16(UInt16(length))
+                buffer.write(opt.data)
+            }
+            case Unknown(_, data) => buffer.write(data)
         }
 
         return buffer.bytes()
