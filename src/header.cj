@@ -1,6 +1,12 @@
 package dnsmsg
 
 import std.io.*
+import std.random.*
+
+// ID generates a random ID for a DNS message.
+public func ID(): UInt16 {
+    Random().nextUInt16()
+}
 
 // OpCode is the operation code for a DNS message.
 public enum OpCode {
