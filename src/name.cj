@@ -32,6 +32,12 @@ extend Name <: Equatable<Name> {
     }
 }
 
+extend Name <: ToString {
+    public func toString(): String {
+        return String.join(labels, delimiter: ".")
+    }
+}
+
 extend Name {
     static func fromBytes<T>(buffer: T): Name where T <: InputStream & Seekable {
         var labels = ArrayList<String>()
@@ -77,9 +83,5 @@ extend Name {
         // Reset to original position
         buffer.seek(SeekPosition.Begin(currentPos))
         return name
-    }
-
-    public func toString(): String {
-        return String.join(labels, delimiter: ".")
     }
 }

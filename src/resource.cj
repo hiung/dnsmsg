@@ -128,7 +128,9 @@ public enum RData {
     | SRV(UInt16, UInt16, UInt16, Name) // priority, weight, port, target
     | OPT(Array<OPTValue>) 
     | Unknown(Type, Array<UInt8>)
+}
 
+extend RData <: ToString {
     public func toString(): String {
         match (this) {
             case A(ipv4) => "A: ${ipv4.toString()}"
