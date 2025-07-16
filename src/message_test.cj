@@ -128,7 +128,7 @@ class MessageTest {
             udpSocket.receiveTimeout = Duration.second * 2
             udpSocket.bind()
             udpSocket.sendTo(IPSocketAddress("192.168.0.2", 53), payload)
-            let (servAddr, bytesRead) = udpSocket.receiveFrom(bytes)
+            let (_, bytesRead) = udpSocket.receiveFrom(bytes)
             
             @Expect(bytesRead > 0)
 
@@ -215,7 +215,7 @@ class MessageTest {
             udpSocket.receiveTimeout = Duration.second * 2
             udpSocket.bind()
             udpSocket.sendTo(IPSocketAddress("192.168.0.2", 53), payload)
-            let (servAddr, bytesRead) = udpSocket.receiveFrom(bytes)
+            let (_, bytesRead) = udpSocket.receiveFrom(bytes)
             
             @Expect(bytesRead > 0)
 

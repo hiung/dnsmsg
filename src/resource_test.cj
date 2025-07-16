@@ -45,8 +45,6 @@ class ResourceTest {
         let buffer = ByteBuffer()
         buffer.write(data)
 
-        RData.A(IPv4Address(192, 168, 1, 1))
-
         let resource = ResourceRecord.fromBytes(buffer)
         @Expect(resource.name.toString() == "cangjie-lang.cn")
         @Expect(resource.rType == TypeA)
