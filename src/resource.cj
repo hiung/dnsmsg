@@ -133,19 +133,19 @@ public enum RData {
 extend RData <: ToString {
     public func toString(): String {
         match (this) {
-            case A(ipv4) => "A: ${ipv4.toString()}"
-            case NS(name) => "NS: ${name.toString()}"
-            case CNAME(name) => "CNAME: ${name.toString()}"
-            case SOA(soaVal) => "SOA: ${soaVal.toString()}"
-            case WKS(ipv4, protocol, bitmap) => "WKS: ${ipv4.toString()} ${protocol} ${bitmap}"
-            case PTR(name) => "PTR: ${name.toString()}"
+            case A(ipv4) => "A: ${ipv4}"
+            case NS(name) => "NS: ${name}"
+            case CNAME(name) => "CNAME: ${name}"
+            case SOA(soaVal) => "SOA: ${soaVal}"
+            case WKS(ipv4, protocol, bitmap) => "WKS: ${ipv4}, Protocol=${protocol}, Bitmap=${bitmap}"
+            case PTR(name) => "PTR: ${name}"
             case HINFO(cpu, os) => "HINFO: CPU=${cpu}, OS=${os}"
-            case MINFO(mailbox, errorsMailbox) => "MINFO: Mailbox=${mailbox.toString()}, Errors=${errorsMailbox.toString()}"
-            case MX(preference, name) => "MX: Preference=${preference}, Name=${name.toString()}"
+            case MINFO(mailbox, errorsMailbox) => "MINFO: Mailbox=${mailbox}, Errors=${errorsMailbox}"
+            case MX(preference, name) => "MX: Preference=${preference}, Name=${name}"
             case TXT(text) => "TXT: ${text}"
-            case AAAA(ipv6) => "AAAA: ${ipv6.toString()}"
-            case SRV(priority, weight, port, target) => "SRV: Priority=${priority}, Weight=${weight}, Port=${port}, Target=${target.toString()}"
-            case OPT(options) => "OPT: ${String.join(options.map({opt => opt.toString()}), delimiter:",")}"
+            case AAAA(ipv6) => "AAAA: ${ipv6}"
+            case SRV(priority, weight, port, target) => "SRV: Priority=${priority}, Weight=${weight}, Port=${port}, Target=${target}"
+            case OPT(options) => "OPT: ${String.join(options.map({opt => opt.toString()}), delimiter:", ")}"
             case Unknown(_type, data) => "Unknown Record Type(${_type}): Data=${data}"
         }
     }
@@ -161,10 +161,13 @@ public struct SOAValue {
         public let expire: UInt32,
         public let minimum: UInt32
     ) {}
+}
 
+extend SOAValue <: ToString {
     public func toString(): String {
-        return "${mname.toString()} ${rname.toString()} ${serial} ${refresh} ${retry} ${expire} ${minimum}"
+        return "MNAME=${mname}, RNAME=${rname}, Serial=${serial}, Refresh=${refresh}, Retry=${retry}, Expire=${expire}, Minimum=${minimum}"
     }
+    
 }
 
 public struct OPTValue {
@@ -172,8 +175,10 @@ public struct OPTValue {
         public let code: UInt16,
         public let data: Array<UInt8>
     ) {}
+}
 
+extend OPTValue <: ToString {
     public func toString(): String {
-        return "Code=${code}, Data=${data.toString()}"
+        return "Code=${code}, Data=${data}"
     }
 }
