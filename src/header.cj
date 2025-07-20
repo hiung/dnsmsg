@@ -13,14 +13,14 @@ public enum OpCode {
     Query
     | IQuery
     | Status
-    | Reserved(UInt8)
+    | Unknown(UInt8)
 
     public static func fromUInt8(value: UInt8): OpCode {
         match (value) {
             case 0x00 => OpCode.Query
             case 0x01 => OpCode.IQuery
             case 0x02 => OpCode.Status
-            case _ => OpCode.Reserved(value)
+            case _ => OpCode.Unknown(value)
         }
     }
 
@@ -29,7 +29,18 @@ public enum OpCode {
             case OpCode.Query => 0x00
             case OpCode.IQuery => 0x01
             case OpCode.Status => 0x02
-            case OpCode.Reserved(value) => value
+            case OpCode.Unknown(value) => value
+        }
+    }
+}
+
+extend OpCode <: ToString {
+    public func toString(): String {
+        match (this) {
+            case OpCode.Query => "Query"
+            case OpCode.IQuery => "IQuery"
+            case OpCode.Status => "Status"
+            case OpCode.Unknown(value) => "Unknown(${value})"
         }
     }
 }
@@ -49,7 +60,7 @@ public enum RCode {
     | NameError
     | NotImplemented
     | Refused
-    | Reserved(UInt8)
+    | Unknown(UInt8)
 
     public static func fromUInt8(value: UInt8): RCode {
         match (value) {
@@ -59,7 +70,7 @@ public enum RCode {
             case 0x03 => RCode.NameError // NXDOMAIN
             case 0x04 => RCode.NotImplemented // Not implemented
             case 0x05 => RCode.Refused // Refused
-            case _ => RCode.Reserved(value)
+            case _ => RCode.Unknown(value)
         }
     }
 
@@ -71,7 +82,21 @@ public enum RCode {
             case RCode.NameError => 0x03 // NXDOMAIN
             case RCode.NotImplemented => 0x04 // Not implemented
             case RCode.Refused => 0x05 // Refused
-            case RCode.Reserved(value) => value
+            case RCode.Unknown(value) => value
+        }
+    }
+}
+
+extend RCode <: ToString {
+    public func toString(): String {
+        match (this) {
+            case RCode.NoError => "NoError"
+            case RCode.FormatError => "FormatError"
+            case RCode.ServerFailure => "ServerFailure"
+            case RCode.NameError => "NameError"
+            case RCode.NotImplemented => "NotImplemented"
+            case RCode.Refused => "Refused"
+            case RCode.Unknown(value) => "Unknown(${value})"
         }
     }
 }

@@ -24,7 +24,7 @@ class HeaderTest {
         })
 
         @Expect(match (3u8.toOpCode()) {
-            case OpCode.Reserved(3u8) => true
+            case OpCode.Unknown(3u8) => true
             case _ => false
         })
     }
@@ -62,7 +62,7 @@ class HeaderTest {
         })
 
         @Expect(match (6u8.toRCode()) {
-            case RCode.Reserved(6u8) => true
+            case RCode.Unknown(6u8) => true
             case _ => false
         })
     }
