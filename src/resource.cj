@@ -61,7 +61,8 @@ extend ResourceRecord {
             let ipv4bytes = readUInt32(buffer) ?? throw Exception("Failed to read WKS IPv4 from buffer")
             let protocol = readUInt8(buffer) ?? throw Exception("Failed to read WKS protocol from buffer")
             let bitmapLength = rdLength - 5 // 4 bytes for IPv4 + 1 byte for protocol
-            let bitmap = readBytes(buffer, Int64(bitmapLength)) ?? throw Exception("Failed to read WKS bitmap from buffer")
+            let bitmap = readBytes(buffer, Int64(bitmapLength)) ?? throw Exception(
+                "Failed to read WKS bitmap from buffer")
             RData.WKS(IPv4Address(ipv4bytes), protocol, bitmap)
         } else if (rType == TypePTR) {
             let name = Name.fromBytes(buffer)
@@ -77,13 +78,12 @@ extend ResourceRecord {
             let name = Name.fromBytes(buffer)
             RData.MX(preference, name)
         } else if (rType == TypeTXT) {
-            let text = String.fromUtf8(readBytes(buffer, Int64(rdLength)) ??  throw Exception("Failed to read TXT record data from buffer"))
+            let text = String.fromUtf8(
+                readBytes(buffer, Int64(rdLength)) ?? throw Exception("Failed to read TXT record data from buffer"))
             RData.TXT(text)
         } else if (rType == TypeAAAA) {
             let bytes = readBytes(buffer, 16) ?? throw Exception("Failed to read AAAA record data from buffer")
-            RData.AAAA(
-                IPv6Address(bytes)
-            )
+            RData.AAAA(IPv6Address(bytes))
         } else if (rType == TypeSRV) {
             let priority = readUInt16(buffer) ?? throw Exception("Failed to read SRV priority from buffer")
             let weight = readUInt16(buffer) ?? throw Exception("Failed to read SRV weight from buffer")
@@ -126,7 +126,7 @@ public enum RData {
     | TXT(String)
     | AAAA(IPv6Address)
     | SRV(UInt16, UInt16, UInt16, Name) // priority, weight, port, target
-    | OPT(Array<OPTValue>) 
+    | OPT(Array<OPTValue>)
     | Unknown(Type, Array<UInt8>)
 }
 
@@ -145,7 +145,7 @@ extend RData <: ToString {
             case TXT(text) => "TXT: ${text}"
             case AAAA(ipv6) => "AAAA: ${ipv6}"
             case SRV(priority, weight, port, target) => "SRV: Priority=${priority}, Weight=${weight}, Port=${port}, Target=${target}"
-            case OPT(options) => "OPT: ${String.join(options.map({opt => opt.toString()}), delimiter:", ")}"
+            case OPT(options) => "OPT: ${String.join(options.map({opt => opt.toString()}), delimiter: ", ")}"
             case Unknown(_type, data) => "Unknown Record Type(${_type}): Data=${data}"
         }
     }
@@ -167,7 +167,6 @@ extend SOAValue <: ToString {
     public func toString(): String {
         return "MNAME=${mname}, RNAME=${rname}, Serial=${serial}, Refresh=${refresh}, Retry=${retry}, Expire=${expire}, Minimum=${minimum}"
     }
-    
 }
 
 public struct OPTValue {

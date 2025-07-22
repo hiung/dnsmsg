@@ -50,18 +50,22 @@ func readBytes<T>(buffer: T, length: Int64): ?Array<UInt8> where T <: InputStrea
 
 extend ByteBuffer {
     func writeUInt16(value: UInt16) {
-        write([
-            UInt8((value >> 8) & 0xFF),
-            UInt8(value & 0xFF)
-        ])
+        write(
+            [
+                UInt8((value >> 8) & 0xFF),
+                UInt8(value & 0xFF)
+            ]
+        )
     }
 
     func writeUInt32(value: UInt32) {
-        write([
-            UInt8((value >> 24) & 0xFF),
-            UInt8((value >> 16) & 0xFF),
-            UInt8((value >> 8) & 0xFF),
-            UInt8(value & 0xFF)
-        ])
+        write(
+            [
+                UInt8((value >> 24) & 0xFF),
+                UInt8((value >> 16) & 0xFF),
+                UInt8((value >> 8) & 0xFF),
+                UInt8(value & 0xFF)
+            ]
+        )
     }
 }

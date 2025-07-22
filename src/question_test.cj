@@ -35,6 +35,6 @@ class QuestionTest {
         let buffer = ByteBuffer()
         buffer.write(data)
 
-        @ExpectThrows(Question.fromBytes(buffer)) 
+        @ExpectThrows(Question.fromBytes(buffer))
     }
 }

@@ -22,8 +22,10 @@ class MessageTest {
             12, b'c', b'a',b'n', b'g', b'j', b'i', b'e', b'-', b'l', b'a', b'n', b'g', // "cangjie-lang"
             2, b'c', b'n', // "cn"
             0, // End of name
-            0, 1, // Type A
-            0, 1, // Class IN
+            0,
+            1, // Type A
+            0,
+            1, // Class IN
 
             // Answer
             3, b'w', b'w', b'w', // "www"
@@ -66,12 +68,12 @@ class MessageTest {
         for (v in data) {
             println("Comparing byte ${i}: ${messageBytes[i]} with expected byte: ${v}")
             @Expect(messageBytes[i] == v)
-            i += 1 
+            i += 1
         }
 
-        @Expect(message.toBytes() == data) 
+        @Expect(message.toBytes() == data)
 
-        let uncompressedData : Array<UInt8> = [
+        let uncompressedData: Array<UInt8> = [
             // Header
             0x01, 0x00, // ID
             0x01, 0x00, // Flags (standard query)
@@ -99,7 +101,7 @@ class MessageTest {
             192, 168, 1, 1 // rdata for A record
         ]
 
-        @Expect(message.toBytes(compress: false) == uncompressedData) 
+        @Expect(message.toBytes(compress: false) == uncompressedData)
     }
 
     @TestCase
@@ -129,7 +131,7 @@ class MessageTest {
             udpSocket.bind()
             udpSocket.sendTo(IPSocketAddress("192.168.0.2", 53), payload)
             let (_, bytesRead) = udpSocket.receiveFrom(bytes)
-            
+
             @Expect(bytesRead > 0)
 
             let buffer = ByteBuffer()
@@ -142,7 +144,7 @@ class MessageTest {
             @Expect(match (message.header.flags.opCode) {
                 case OpCode.Query => true // Opcode should be Query
                 case _ => false
-            }) 
+            })
             @Expect(message.header.flags.authoritative == false) // Authoritative flag
             @Expect(message.header.flags.truncated == false) // Truncated flag
             @Expect(message.header.flags.recursionDesired == false) // Recursion desired flag
@@ -172,7 +174,7 @@ class MessageTest {
             @Expect(match (message.answers[0].rData) {
                 case RData.A(addr) => addr.toString() == "123.249.12.207"
                 case _ => false
-            })          
+            })
         }
     }
 
@@ -180,14 +182,8 @@ class MessageTest {
     func testMessageBuilder() {
         let message = MessageBuilder(id: 0x1234)
             .addQuestion(Question(Name("example.com"), TypeA, ClassIN))
-            .addAnswer(ResourceRecord(
-                Name("example.com"),
-                TypeA,
-                ClassIN,
-                3600,
-                RData.A(IPv4Address(0x7f000001))))
-            .setFlags(Flags(
-                response: true))
+            .addAnswer(ResourceRecord(Name("example.com"), TypeA, ClassIN, 3600, RData.A(IPv4Address(0x7f000001))))
+            .setFlags(Flags(response: true))
             .build()
 
         @Expect(message.header.id == 0x1234)
@@ -216,7 +212,7 @@ class MessageTest {
             udpSocket.bind()
             udpSocket.sendTo(IPSocketAddress("192.168.0.2", 53), payload)
             let (_, bytesRead) = udpSocket.receiveFrom(bytes)
-            
+
             @Expect(bytesRead > 0)
 
             let buffer = ByteBuffer()
@@ -229,7 +225,7 @@ class MessageTest {
             @Expect(match (message.header.flags.opCode) {
                 case OpCode.Query => true // Opcode should be Query
                 case _ => false
-            }) 
+            })
             @Expect(message.header.flags.authoritative == false) // Authoritative flag
             @Expect(message.header.flags.truncated == false) // Truncated flag
             @Expect(message.header.flags.recursionDesired == false) // Recursion desired flag
@@ -259,7 +255,7 @@ class MessageTest {
             @Expect(match (message.answers[0].rData) {
                 case RData.A(addr) => addr.toString() == "123.249.12.207"
                 case _ => false
-            })          
+            })
         }
     }
 }

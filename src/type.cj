@@ -1,5 +1,7 @@
 package dnsmsg
 
+import std.convert.*
+
 // Type is the type of a DNS query.
 public type Type = UInt16
 // Resource Record (RR) and Question types
@@ -32,7 +34,7 @@ public func getTypeName(_type: Type): String {
         "CNAME"
     } else if (_type == TypeSOA) {
         "SOA"
-    } else if (_type == TypeWKS) {  
+    } else if (_type == TypeWKS) {
         "WKS"
     } else if (_type == TypePTR) {
         "PTR"
@@ -60,6 +62,47 @@ public func getTypeName(_type: Type): String {
         "ANY"
     } else {
         throw Exception("Unknown type: ${_type}")
+    }
+}
+
+public func parseType(str: String): UInt16 {
+    let str_normalized = str.toAsciiUpper()
+    if (str_normalized == "A") {
+        1
+    } else if (str_normalized == "NS") {
+        2
+    } else if (str_normalized == "CNAME") {
+        5
+    } else if (str_normalized == "SOA") {
+        6
+    } else if (str_normalized == "WKS") {
+        11
+    } else if (str_normalized == "PTR") {
+        12
+    } else if (str_normalized == "HINFO") {
+        13
+    } else if (str_normalized == "MINFO") {
+        14
+    } else if (str_normalized == "MX") {
+        15
+    } else if (str_normalized == "TXT") {
+        16
+    } else if (str_normalized == "AAAA") {
+        28
+    } else if (str_normalized == "SRV") {
+        33
+    } else if (str_normalized == "OPT") {
+        41
+    } else if (str_normalized == "AXFR") {
+        252
+    } else if (str_normalized == "MAILB") {
+        253
+    } else if (str_normalized == "MAILA") {
+        254
+    } else if (str_normalized == "ANY") {
+        255
+    } else {
+        throw Exception("Unknown type: ${str}")
     }
 }
 
