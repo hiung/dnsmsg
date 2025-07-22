@@ -12,7 +12,7 @@ class MessageTest {
         let data: Array<UInt8> = [
             // Header
             0x01, 0x00, // ID
-            0x01, 0x00, // Flags (standard query)
+            0x8f, 0x81, // Flags 
             0x00, 0x01, // QDCOUNT (1 question)
             0x00, 0x01, // ANCOUNT (1 answer)
             0x00, 0x00, // NSCOUNT (0 authorities)
@@ -41,6 +41,26 @@ class MessageTest {
         let message = Message.fromBytes(buffer)
 
         @Expect(message.header.id == 0x0100) // ID from header
+
+        @Expect(message.header.flags.response == true) // Response flag
+        @Expect(match (message.header.flags.opCode) {
+            case OpCode.IQuery => true // Opcode should be IQuery
+            case _ => false
+        })
+        @Expect(message.header.flags.authoritative == true) // Authoritative flag
+        @Expect(message.header.flags.truncated == true) // Truncated flag
+        @Expect(message.header.flags.recursionDesired == true) // Recursion desired flag
+        @Expect(message.header.flags.recursionAvailable == true) // Recursion available flag
+        @Expect(match (message.header.flags.rCode) {
+            case RCode.FormatError => true // RCode should be FormatError
+            case _ => false
+        })
+
+        @Expect(message.header.qdCount == 1) // One question
+        @Expect(message.header.anCount == 1) // One answer  
+        @Expect(message.header.nsCount == 0) // No authorities
+        @Expect(message.header.arCount == 0) // No additionals
+
         @Expect(message.questions.size == 1) // One question
         @Expect(message.answers.size == 1) // One answer
         @Expect(message.authorities.size == 0) // No authorities
@@ -74,7 +94,7 @@ class MessageTest {
         let uncompressedData : Array<UInt8> = [
             // Header
             0x01, 0x00, // ID
-            0x01, 0x00, // Flags (standard query)
+            0x8f, 0x81, // Flags 
             0x00, 0x01, // QDCOUNT (1 question)
             0x00, 0x01, // ANCOUNT (1 answer)
             0x00, 0x00, // NSCOUNT (0 authorities)
