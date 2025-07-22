@@ -68,6 +68,25 @@ class HeaderTest {
     }
 
     @TestCase
+    func testFlags() {
+        let flags = Flags(0x8f81)
+        @Expect(flags.response == true)
+        @Expect(match (flags.opCode) {
+            case OpCode.IQuery => true
+            case _ => false
+        })
+        @Expect(flags.authoritative == true)   
+        @Expect(flags.truncated == true)
+        @Expect(flags.recursionDesired == true)
+        @Expect(flags.recursionAvailable == true)
+        @Expect(match (flags.rCode) {
+            case RCode.FormatError => true
+            case _ => false
+        })
+        @Expect(flags.toUInt16() == 0x8f81)
+    }
+
+    @TestCase
     func testHeaderFromBytes() {
         let data: Array<UInt8> = [
             0xdb, 0x42, // ID
