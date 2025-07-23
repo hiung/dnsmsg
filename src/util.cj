@@ -1,6 +1,7 @@
 package dnsmsg
 
 import std.io.*
+import std.binary.*
 
 func readUInt8<T>(buffer: T): ?UInt8 where T <: InputStream & Seekable {
     let byte = Array<UInt8>(1, repeat: 0)
@@ -19,7 +20,7 @@ func readUInt16<T>(buffer: T): ?UInt16 where T <: InputStream & Seekable {
         return None // Not enough data read, return None
     }
 
-    return (UInt16(bytes[0]) << 8) | UInt16(bytes[1])
+    return UInt16.readBigEndian(bytes)
 }
 
 func readUInt32<T>(buffer: T): ?UInt32 where T <: InputStream & Seekable {
@@ -30,7 +31,7 @@ func readUInt32<T>(buffer: T): ?UInt32 where T <: InputStream & Seekable {
         return None // Not enough data read, return None
     }
 
-    return (UInt32(bytes[0]) << 24) | (UInt32(bytes[1]) << 16) | (UInt32(bytes[2]) << 8) | UInt32(bytes[3])
+    return UInt32.readBigEndian(bytes)
 }
 
 func readBytes<T>(buffer: T, length: Int64): ?Array<UInt8> where T <: InputStream & Seekable {
@@ -50,22 +51,14 @@ func readBytes<T>(buffer: T, length: Int64): ?Array<UInt8> where T <: InputStrea
 
 extend ByteBuffer {
     func writeUInt16(value: UInt16) {
-        write(
-            [
-                UInt8((value >> 8) & 0xFF),
-                UInt8(value & 0xFF)
-            ]
-        )
+        let bytes = Array<UInt8>(2, repeat: 0)
+        value.writeBigEndian(bytes)
+        write(bytes)
     }
 
     func writeUInt32(value: UInt32) {
-        write(
-            [
-                UInt8((value >> 24) & 0xFF),
-                UInt8((value >> 16) & 0xFF),
-                UInt8((value >> 8) & 0xFF),
-                UInt8(value & 0xFF)
-            ]
-        )
+        let bytes = Array<UInt8>(4, repeat: 0)
+        value.writeBigEndian(bytes)
+        write(bytes)
     }
 }
