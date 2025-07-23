@@ -8,81 +8,42 @@ import std.io.*
 class HeaderTest {
     @TestCase
     func testToOpCode() {
-        @Expect(match (0u8.toOpCode()) {
-            case OpCode.Query => true
-            case _ => false
-        })
+        @Expect(0u8.toOpCode()== OpCode.Query )
 
-        @Expect(match (1u8.toOpCode()) {
-            case OpCode.IQuery => true
-            case _ => false
-        })
+        @Expect(1u8.toOpCode() == OpCode.IQuery)
 
-        @Expect(match (2u8.toOpCode()) {
-            case OpCode.Status => true
-            case _ => false
-        })
+        @Expect(2u8.toOpCode() == OpCode.Status)
 
-        @Expect(match (3u8.toOpCode()) {
-            case OpCode.Unknown(3u8) => true
-            case _ => false
-        })
+        @Expect(3u8.toOpCode() == OpCode.Unknown(3u8))
     }
 
     @TestCase
     func testToRCode() {
-        @Expect(match (0u8.toRCode()) {
-            case RCode.NoError => true
-            case _ => false
-        })
+        @Expect(0u8.toRCode() == RCode.NoError)
 
-        @Expect(match (1u8.toRCode()) {
-            case RCode.FormatError => true
-            case _ => false
-        })
+        @Expect(1u8.toRCode() == RCode.FormatError)
 
-        @Expect(match (2u8.toRCode()) {
-            case RCode.ServerFailure => true
-            case _ => false
-        })
+        @Expect(2u8.toRCode() == RCode.ServerFailure)
 
-        @Expect(match (3u8.toRCode()) {
-            case RCode.NameError => true
-            case _ => false
-        })
+        @Expect(3u8.toRCode() == RCode.NameError)
 
-        @Expect(match (4u8.toRCode()) {
-            case RCode.NotImplemented => true
-            case _ => false
-        })
+        @Expect(4u8.toRCode() == RCode.NotImplemented)
 
-        @Expect(match (5u8.toRCode()) {
-            case RCode.Refused => true
-            case _ => false
-        })
+        @Expect(5u8.toRCode() == RCode.Refused)
 
-        @Expect(match (6u8.toRCode()) {
-            case RCode.Unknown(6u8) => true
-            case _ => false
-        })
+        @Expect(6u8.toRCode() == RCode.Unknown(6u8))
     }
 
     @TestCase
     func testFlags() {
         let flags = Flags(0x8f81)
         @Expect(flags.response == true)
-        @Expect(match (flags.opCode) {
-            case OpCode.IQuery => true
-            case _ => false
-        })
+        @Expect(flags.opCode == OpCode.IQuery)
         @Expect(flags.authoritative == true)   
         @Expect(flags.truncated == true)
         @Expect(flags.recursionDesired == true)
         @Expect(flags.recursionAvailable == true)
-        @Expect(match (flags.rCode) {
-            case RCode.FormatError => true
-            case _ => false
-        })
+        @Expect(flags.rCode == RCode.FormatError)
         @Expect(flags.toUInt16() == 0x8f81)
     }
 
@@ -102,18 +63,12 @@ class HeaderTest {
         let header = Header.fromBytes(buffer)
         @Expect(header.id == 0xdb42)
         @Expect(header.flags.response == false)
-        @Expect(match (header.flags.opCode) {
-            case OpCode.Query => true
-            case _ => false
-        })
+        @Expect(header.flags.opCode == OpCode.Query)
         @Expect(header.flags.authoritative == false)
         @Expect(header.flags.truncated == false)
         @Expect(header.flags.recursionDesired == true)
         @Expect(header.flags.recursionAvailable == false)
-        @Expect(match (header.flags.rCode) {
-            case RCode.NoError => true
-            case _ => false
-        })
+        @Expect(header.flags.rCode == RCode.NoError)
         @Expect(header.qdCount == 1)
         @Expect(header.anCount == 0)
         @Expect(header.nsCount == 0)

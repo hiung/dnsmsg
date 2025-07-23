@@ -3,6 +3,7 @@ package dnsmsg
 import std.net.*
 import std.io.*
 import std.collection.*
+import std.deriving.*
 
 // Resource for DNS answers, authorities, and additionals.
 public struct ResourceRecord {
@@ -113,6 +114,7 @@ extend ResourceRecord {
     }
 }
 
+@Derive[Equatable]
 public enum RData {
     A(IPv4Address)
     | NS(Name)
@@ -151,6 +153,7 @@ extend RData <: ToString {
     }
 }
 
+@Derive[Equatable]
 public struct SOAValue {
     public SOAValue(
         public let mname: Name,
@@ -169,6 +172,7 @@ extend SOAValue <: ToString {
     }
 }
 
+@Derive[Equatable]
 public struct OPTValue {
     public OPTValue(
         public let code: UInt16,

@@ -2,6 +2,7 @@ package dnsmsg
 
 import std.io.*
 import std.random.*
+import std.deriving.*
 
 // ID generates a random ID for a DNS message.
 public func ID(): UInt16 {
@@ -9,6 +10,7 @@ public func ID(): UInt16 {
 }
 
 // OpCode is the operation code for a DNS message.
+@Derive[Equatable]
 public enum OpCode {
     Query
     | IQuery
@@ -53,6 +55,7 @@ extend UInt8 {
 }
 
 // RCode is the response status code for a DNS message.
+@Derive[Equatable]
 public enum RCode {
     NoError
     | FormatError

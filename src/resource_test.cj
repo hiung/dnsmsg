@@ -50,10 +50,7 @@ class ResourceTest {
         @Expect(resource.rType == TypeA)
         @Expect(resource.rClass == ClassIN)
         @Expect(resource.ttl == 60)
-        @Expect(match (resource.rData) {
-            case RData.A(addr) => addr.toString() == "192.168.1.1"
-            case _ => false
-        })
+        @Expect(resource.rData == RData.A(IPv4Address(192, 168, 1, 1)))
     }
 
     @TestCase
@@ -100,9 +97,6 @@ class ResourceTest {
         @Expect(resource.rType == TypeNS)
         @Expect(resource.rClass == ClassIN)
         @Expect(resource.ttl == 60)
-        @Expect(match (resource.rData) {
-            case RData.NS(name) => name.toString() == "ns.cangjie-lang.cn"
-            case _ => false
-        })
+        @Expect(resource.rData == RData.NS(Name("ns.cangjie-lang.cn")))
     }
 }

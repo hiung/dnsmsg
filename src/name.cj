@@ -3,8 +3,10 @@ package dnsmsg
 import std.collection.*
 import std.unicode.UnicodeStringExtension
 import std.io.*
+import std.deriving.*
 
 // Name represents a domain name, which is a sequence of labels separated by dots.
+@Derive[Equatable]
 public struct Name {
     Name(public let labels: Array<String>) {}
 
@@ -20,15 +22,6 @@ public struct Name {
 extend Name <: Hashable {
     public func hashCode(): Int64 {
         toString().hashCode()
-    }
-}
-
-extend Name <: Equatable<Name> {
-    public operator func ==(rhs: Name): Bool {
-        if (hashCode() != rhs.hashCode()) {
-            return false
-        }
-        return true
     }
 }
 

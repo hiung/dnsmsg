@@ -45,18 +45,12 @@ class MessageTest {
         @Expect(message.header.id == 0x0100) // ID from header
 
         @Expect(message.header.flags.response == true) // Response flag
-        @Expect(match (message.header.flags.opCode) {
-            case OpCode.IQuery => true // Opcode should be IQuery
-            case _ => false
-        })
+        @Expect(message.header.flags.opCode == OpCode.IQuery)
         @Expect(message.header.flags.authoritative == true) // Authoritative flag
         @Expect(message.header.flags.truncated == true) // Truncated flag
         @Expect(message.header.flags.recursionDesired == true) // Recursion desired flag
         @Expect(message.header.flags.recursionAvailable == true) // Recursion available flag
-        @Expect(match (message.header.flags.rCode) {
-            case RCode.FormatError => true // RCode should be FormatError
-            case _ => false
-        })
+        @Expect(message.header.flags.rCode == RCode.FormatError)
 
         @Expect(message.header.qdCount == 1) // One question
         @Expect(message.header.anCount == 1) // One answer  
@@ -78,19 +72,10 @@ class MessageTest {
         @Expect(answer.rType == TypeA)
         @Expect(answer.rClass == ClassIN)
         @Expect(answer.ttl == 60)
-        @Expect(match (answer.rData) {
-            case RData.A(addr) => addr.toString() == "192.168.1.1"
-            case _ => false
-        })
+        @Expect(answer.rData == RData.A(IPv4Address(192, 168, 1, 1)))
         println(" ipv4 address: ${answer.rData.toString()}")
-        let messageBytes = message.toBytes()
-        var i = 0
-        for (v in data) {
-            println("Comparing byte ${i}: ${messageBytes[i]} with expected byte: ${v}")
-            @Expect(messageBytes[i] == v)
-            i += 1
-        }
 
+        let messageBytes = message.toBytes()
         @Expect(message.toBytes() == data)
 
         let uncompressedData: Array<UInt8> = [
@@ -161,18 +146,12 @@ class MessageTest {
 
             @Expect(message.header.id == 0x00d0) // ID from header
             @Expect(message.header.flags.response == true) // Response flag
-            @Expect(match (message.header.flags.opCode) {
-                case OpCode.Query => true // Opcode should be Query
-                case _ => false
-            })
+            @Expect(message.header.flags.opCode == OpCode.Query )
             @Expect(message.header.flags.authoritative == false) // Authoritative flag
             @Expect(message.header.flags.truncated == false) // Truncated flag
             @Expect(message.header.flags.recursionDesired == false) // Recursion desired flag
             @Expect(message.header.flags.recursionAvailable == true) // Recursion available flag
-            @Expect(match (message.header.flags.rCode) {
-                case RCode.NoError => true // RCode should be NoError
-                case _ => false
-            })
+            @Expect(message.header.flags.rCode == RCode.NoError)
             @Expect(message.header.qdCount == 1) // One question
             @Expect(message.header.anCount == 1) // No answers
             @Expect(message.header.nsCount == 0) // Four authorities
@@ -191,10 +170,7 @@ class MessageTest {
             @Expect(message.answers[0].name.toString() == "cangjie-lang.cn")
             @Expect(message.answers[0].rType == TypeA)
             @Expect(message.answers[0].rClass == ClassIN)
-            @Expect(match (message.answers[0].rData) {
-                case RData.A(addr) => addr.toString() == "123.249.12.207"
-                case _ => false
-            })
+            @Expect(message.answers[0].rData == RData.A(IPv4Address(123, 249, 12, 207)))
         }
     }
 
@@ -208,10 +184,7 @@ class MessageTest {
 
         @Expect(message.header.id == 0x1234)
         @Expect(message.header.flags.response == true)
-        @Expect(match (message.header.flags.opCode) {
-            case OpCode.Query => true
-            case _ => false 
-        })
+        @Expect(message.header.flags.opCode == OpCode.Query)
         @Expect(message.questions.size == 1)
         @Expect(message.answers.size == 1)
         @Expect(message.authorities.size == 0)
@@ -242,18 +215,12 @@ class MessageTest {
 
             @Expect(message.header.id == 0x00d0) // ID from header
             @Expect(message.header.flags.response == true) // Response flag
-            @Expect(match (message.header.flags.opCode) {
-                case OpCode.Query => true // Opcode should be Query
-                case _ => false
-            })
+            @Expect(message.header.flags.opCode == OpCode.Query)
             @Expect(message.header.flags.authoritative == false) // Authoritative flag
             @Expect(message.header.flags.truncated == false) // Truncated flag
             @Expect(message.header.flags.recursionDesired == false) // Recursion desired flag
             @Expect(message.header.flags.recursionAvailable == true) // Recursion available flag
-            @Expect(match (message.header.flags.rCode) {
-                case RCode.NoError => true // RCode should be NoError
-                case _ => false
-            })
+            @Expect(message.header.flags.rCode ==RCode.NoError)
             @Expect(message.header.qdCount == 1) // One question
             @Expect(message.header.anCount == 1) // No answers
             @Expect(message.header.nsCount == 0) // Four authorities
@@ -272,10 +239,7 @@ class MessageTest {
             @Expect(message.answers[0].name.toString() == "cangjie-lang.cn")
             @Expect(message.answers[0].rType == TypeA)
             @Expect(message.answers[0].rClass == ClassIN)
-            @Expect(match (message.answers[0].rData) {
-                case RData.A(addr) => addr.toString() == "123.249.12.207"
-                case _ => false
-            })
+            @Expect(message.answers[0].rData == RData.A(IPv4Address(123, 249, 12, 207)))
         }
     }
 }
